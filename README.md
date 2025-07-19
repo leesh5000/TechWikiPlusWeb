@@ -1,0 +1,82 @@
+# TechWiki Plus
+
+> AI와 인간이 협업하여 만드는 신뢰할 수 있는 기술 지식 플랫폼
+
+## 프로젝트 소개
+
+TechWiki Plus는 AI가 생성한 고품질의 기술 문서를 커뮤니티가 검증하고 개선하는 크라우드소싱 플랫폼입니다. 기여자들에게 경제적 보상을 제공하여 지속가능한 기술 지식 생태계를 구축합니다.
+
+### 핵심 특징
+
+- 🤖 **AI 기반 콘텐츠 생성**: 매일 최신 기술 트렌드에 대한 문서 자동 생성
+- ✏️ **커뮤니티 편집**: 전문가들이 AI 콘텐츠를 검증하고 개선
+- 💰 **경제적 보상**: 기여에 대한 공정한 포인트 지급 및 현금 환급
+- 🔍 **투명한 검증**: 모든 편집 이력과 투표 과정 공개
+- 📚 **무료 접근**: 모든 콘텐츠를 누구나 무료로 열람 가능
+
+## 프로젝트 문서
+
+### 📋 [기획서](docs/planning.md)
+
+프로젝트 개요, 비전, 목적, 시장 분석 및 핵심 기능에 대한 전반적인 기획 내용을 담고 있습니다.
+
+### 📝 [Product Requirements Document (PRD)](docs/prd.md)
+
+사용자 스토리, 기능 요구사항, 비기능 요구사항 등 제품 개발에 필요한 상세 요구사항을 정의합니다.
+
+### 🔧 [Technical Requirements Document (TRD)](docs/trd.md)
+
+시스템 아키텍처, 기술 스택, 데이터베이스 스키마, API 설계 등 기술적 구현 사항을 명시합니다.
+
+## 기술 스택
+
+### Frontend
+
+- Next.js 18 (App Router)
+- TypeScript
+- Tailwind CSS + shadcn/ui
+- Zustand
+
+### Backend
+
+- NestJS
+- TypeScript
+- PostgreSQL
+- Redis
+
+### DevOps
+
+- Docker
+- Kubernetes
+- GitHub Actions
+
+## 시작하기
+
+```bash
+# 프로젝트 클론
+git clone https://github.com/leesh5000/TechWikiPlus.git
+
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+```
+
+## 기여하기
+
+TechWiki Plus는 오픈소스 프로젝트입니다. 기여를 환영합니다!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 라이선스
+
+이 프로젝트는 MIT 라이선스를 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+
+## 문의
+
+프로젝트에 대한 문의사항이나 제안사항이 있으시면 [Issues](https://github.com/leesh5000/TechWikiPlus/issues)에 등록해주세요.
