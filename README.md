@@ -1,10 +1,10 @@
-# TechWiki Plus
+# TechWikiPlusApp
 
 > AI와 인간이 협업하여 만드는 신뢰할 수 있는 기술 지식 플랫폼
 
 ## 프로젝트 소개
 
-TechWiki Plus는 AI가 생성한 고품질의 기술 문서를 커뮤니티가 검증하고 개선하는 크라우드소싱 플랫폼입니다. 기여자들에게 경제적 보상을 제공하여 지속가능한 기술 지식 생태계를 구축합니다.
+TechWikiPlusApp은 AI가 생성한 고품질의 기술 문서를 커뮤니티가 검증하고 개선하는 크라우드소싱 플랫폼의 프론트엔드 애플리케이션입니다. 기여자들에게 경제적 보상을 제공하여 지속가능한 기술 지식 생태계를 구축합니다.
 
 ### 핵심 특징
 
@@ -39,10 +39,7 @@ TechWiki Plus는 AI가 생성한 고품질의 기술 문서를 커뮤니티가 �
 
 ### Backend
 
-- NestJS
-- TypeScript
-- PostgreSQL
-- Redis
+- [TechWikiPlusServer](https://github.com/leesh5000/TechWikiPlusServer) 저장소 참고 바랍니다.
 
 ### DevOps
 
@@ -54,7 +51,10 @@ TechWiki Plus는 AI가 생성한 고품질의 기술 문서를 커뮤니티가 �
 
 ```bash
 # 프로젝트 클론
-git clone https://github.com/leesh5000/TechWikiPlus.git
+git clone https://github.com/leesh5000/TechWikiPlusApp.git
+
+# 프론트엔드 디렉토리로 이동
+cd apps/frontend
 
 # 의존성 설치
 npm install
@@ -65,7 +65,7 @@ npm run dev
 
 ## 기여하기
 
-TechWiki Plus는 오픈소스 프로젝트입니다. 기여를 환영합니다!
+TechWikiPlusApp은 오픈소스 프로젝트입니다. 기여를 환영합니다!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -73,10 +73,6 @@ TechWiki Plus는 오픈소스 프로젝트입니다. 기여를 환영합니다!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 라이선스
-
-이 프로젝트는 MIT 라이선스를 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
-
 ## 문의
 
-프로젝트에 대한 문의사항이나 제안사항이 있으시면 [Issues](https://github.com/leesh5000/TechWikiPlus/issues)에 등록해주세요.
+프로젝트에 대한 문의사항이나 제안사항이 있으시면 [Issues](https://github.com/leesh5000/TechWikiPlusApp/issues)에 등록해주세요.

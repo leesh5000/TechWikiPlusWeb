@@ -67,9 +67,6 @@ temp/
 # ESLint
 .eslintcache
 
-# Prisma
-# Keep prisma schema files but ignore generated client
-prisma/generated/
 
 # Certificates
 *.pem
@@ -114,9 +111,6 @@ prisma/generated/
 .yarn/install-state.gz
 .pnp.*
 
-# Backend specific (if using NestJS)
-dist/
-/dist
 
 # Logs
 logs

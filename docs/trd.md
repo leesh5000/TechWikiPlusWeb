@@ -7,7 +7,7 @@
 ```text
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Frontend  │────▶│   Backend   │────▶│  Database   │
-│  (Next.js)  │     │   (NestJS)  │     │ (PostgreSQL)│
+│  (Next.js)  │     │   (NestJS)  │     │   (MySQL)   │
 └─────────────┘     └─────────────┘     └─────────────┘
        │                    │                    │
        ▼                    ▼                    ▼
@@ -38,7 +38,7 @@
 
 #### Database
 
-- **주 DB**: PostgreSQL
+- **주 DB**: MySQL
 - **캐시**: Redis
 - **검색**: Elasticsearch
 - **파일 저장**: AWS S3
@@ -58,63 +58,76 @@
 
 -- 사용자
 CREATE TABLE users (
-    id UUID PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     github_id VARCHAR(100),
     google_id VARCHAR(100),
-    points INTEGER DEFAULT 0,
+    points INT DEFAULT 0,
     tier VARCHAR(20) DEFAULT 'bronze',
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_github_id (github_id),
+    INDEX idx_google_id (google_id)
 );
 
 -- 게시글
 CREATE TABLE posts (
-    id UUID PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     title VARCHAR(500) NOT NULL,
     content TEXT NOT NULL,
     category VARCHAR(100),
-    ai_generated BOOLEAN DEFAULT true,
-    version INTEGER DEFAULT 1,
-    view_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    ai_generated TINYINT(1) DEFAULT 1,
+    version INT DEFAULT 1,
+    view_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_category (category),
+    INDEX idx_created_at (created_at)
 );
 
 -- 편집 요청
 CREATE TABLE edit_requests (
-    id UUID PRIMARY KEY,
-    post_id UUID REFERENCES posts(id),
-    user_id UUID REFERENCES users(id),
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    post_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
     original_content TEXT,
     edited_content TEXT,
     edit_reason TEXT NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
-    votes_up INTEGER DEFAULT 0,
-    votes_down INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
+    votes_up INT DEFAULT 0,
+    votes_down INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_post_id (post_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_status (status)
 );
 
 -- 포인트 내역
 CREATE TABLE point_transactions (
-    id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    amount INTEGER NOT NULL,
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id CHAR(36) NOT NULL,
+    amount INT NOT NULL,
     type VARCHAR(50) NOT NULL,
-    reference_id UUID,
-    created_at TIMESTAMP DEFAULT NOW()
+    reference_id CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_created_at (created_at)
 );
 
 -- 광고
 CREATE TABLE advertisements (
-    id UUID PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     advertiser_name VARCHAR(255),
     banner_url TEXT,
     target_url TEXT,
-    impressions INTEGER DEFAULT 0,
-    clicks INTEGER DEFAULT 0,
-    active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
+    impressions INT DEFAULT 0,
+    clicks INT DEFAULT 0,
+    active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_active (active)
 );
 ```
 

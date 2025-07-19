@@ -1,0 +1,16 @@
+{
+  "name": "techwiikiplusapp",
+  "version": "1.0.0",
+  "description": "TechWiki+ 프론트엔드 애플리케이션",
+  "private": true,
+  "scripts": {
+    "dev": "cd apps/frontend && npm run dev",
+    "build": "cd apps/frontend && npm run build",
+    "start": "cd apps/frontend && npm run start",
+    "lint": "cd apps/frontend && npm run lint"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
