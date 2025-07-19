@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import Dropdown from '@/components/ui/Dropdown'
 import { 
   Search, 
   Filter, 
@@ -11,8 +12,12 @@ import {
   Eye, 
   CheckCircle, 
   AlertCircle,
-  ChevronDown 
+  ChevronDown,
+  Timer
 } from 'lucide-react'
+
+// 문서 검증 상태 타입
+type VerificationStatus = 'unverified' | 'verifying' | 'verified'
 
 // Mock data - 실제로는 API에서 가져옴
 const mockDocs = [
@@ -22,7 +27,9 @@ const mockDocs = [
     category: "React",
     createdAt: "2025-01-19",
     viewCount: 1234,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
+    upvotes: 127,
+    downvotes: 8,
     excerpt: "React 19에서 도입된 Server Components는 서버에서 렌더링되는 새로운 컴포넌트 타입입니다. 이 가이드에서는 Server Components의 동작 원리부터 실제 구현까지 상세히 다룹니다."
   },
   {
@@ -31,7 +38,9 @@ const mockDocs = [
     category: "TypeScript",
     createdAt: "2025-01-18",
     viewCount: 892,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
+    upvotes: 89,
+    downvotes: 3,
     excerpt: "TypeScript 5.0은 성능 개선과 함께 여러 새로운 기능을 도입했습니다. 이 가이드에서는 기존 프로젝트를 TypeScript 5.0으로 마이그레이션하는 방법을 단계별로 설명합니다."
   },
   {
@@ -40,7 +49,11 @@ const mockDocs = [
     category: "DevOps",
     createdAt: "2025-01-18",
     viewCount: 567,
-    isVerified: false,
+    verificationStatus: 'verifying' as VerificationStatus,
+    upvotes: 45,
+    downvotes: 12,
+    verificationStartedAt: "2025-01-19T10:00:00Z",
+    verificationEndAt: "2025-01-22T10:00:00Z",
     excerpt: "Kubernetes 클러스터를 안전하게 운영하기 위한 최신 보안 모범 사례를 소개합니다. RBAC, 네트워크 정책, Pod 보안 표준 등을 다룹니다."
   },
   {
@@ -49,7 +62,9 @@ const mockDocs = [
     category: "Next.js",
     createdAt: "2025-01-17",
     viewCount: 2103,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
+    upvotes: 210,
+    downvotes: 15,
     excerpt: "Next.js 15의 App Router를 사용할 때 성능을 최대화하는 방법을 알아봅니다. 서버 컴포넌트, 클라이언트 컴포넌트 분리, 스트리밍 등을 다룹니다."
   },
   {
@@ -58,7 +73,9 @@ const mockDocs = [
     category: "Python",
     createdAt: "2025-01-17",
     viewCount: 1456,
-    isVerified: false,
+    verificationStatus: 'unverified' as VerificationStatus,
+    upvotes: 0,
+    downvotes: 0,
     excerpt: "asyncio를 활용한 고급 비동기 프로그래밍 패턴과 실전 예제를 다룹니다. 동시성 처리, 비동기 컨텍스트 매니저, 성능 최적화 기법 등을 포함합니다."
   },
   {
@@ -67,7 +84,9 @@ const mockDocs = [
     category: "API",
     createdAt: "2025-01-16",
     viewCount: 789,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
+    upvotes: 67,
+    downvotes: 5,
     excerpt: "GraphQL과 REST API의 장단점을 비교하고 프로젝트에 맞는 선택 방법을 안내합니다. 성능, 캐싱, 개발 경험 등 다양한 관점에서 분석합니다."
   },
   {
@@ -76,7 +95,9 @@ const mockDocs = [
     category: "DevOps",
     createdAt: "2025-01-16",
     viewCount: 1023,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
+    upvotes: 98,
+    downvotes: 7,
     excerpt: "Docker 멀티 스테이지 빌드를 활용하여 이미지 크기를 줄이고 빌드 효율성을 높이는 방법을 학습합니다."
   },
   {
@@ -85,7 +106,9 @@ const mockDocs = [
     category: "Vue",
     createdAt: "2025-01-15",
     viewCount: 634,
-    isVerified: false,
+    verificationStatus: 'unverified' as VerificationStatus,
+    upvotes: 0,
+    downvotes: 0,
     excerpt: "Vue 3의 Composition API를 실제 프로젝트에 적용하는 방법을 다룹니다. 재사용 가능한 로직 구성과 타입 안전성 확보 방법을 포함합니다."
   },
   {
@@ -94,7 +117,9 @@ const mockDocs = [
     category: "AWS",
     createdAt: "2025-01-15",
     viewCount: 1567,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
+    upvotes: 156,
+    downvotes: 11,
     excerpt: "AWS Lambda를 중심으로 한 서버리스 아키텍처 설계 원칙과 실제 구현 방법을 설명합니다. 비용 최적화와 성능 튜닝 방법도 다룹니다."
   },
   {
@@ -103,8 +128,21 @@ const mockDocs = [
     category: "Database",
     createdAt: "2025-01-14",
     viewCount: 891,
-    isVerified: false,
+    verificationStatus: 'unverified' as VerificationStatus,
+    upvotes: 0,
+    downvotes: 0,
     excerpt: "MongoDB에서 효율적인 인덱싱 전략을 수립하고 쿼리 성능을 최적화하는 방법을 학습합니다. 복합 인덱스, 부분 인덱스 등을 다룹니다."
+  },
+  {
+    id: 11,
+    title: "React Native 앱 성능 최적화 완벽 가이드",
+    category: "React",
+    createdAt: "2025-01-19",
+    viewCount: 234,
+    verificationStatus: 'unverified' as VerificationStatus,
+    upvotes: 0,
+    downvotes: 0,
+    excerpt: "React Native 앱의 성능을 최적화하는 다양한 기법들을 소개합니다. 메모리 관리, 렌더링 최적화, 네이티브 모듈 활용 등 실전 팁을 다룹니다."
   }
 ]
 
@@ -130,7 +168,7 @@ const categoryColors: Record<string, string> = {
 export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('전체')
-  const [verificationFilter, setVerificationFilter] = useState('전체') // 전체, 검증됨, 검증 중
+  const [verificationFilter, setVerificationFilter] = useState('전체') // 전체, 검증됨, 검증 중, 미검증
   const [sortBy, setSortBy] = useState('latest')
   const [showFilters, setShowFilters] = useState(false)
 
@@ -146,8 +184,9 @@ export default function DocsPage() {
       
       // 검증 상태 필터
       const matchesVerification = verificationFilter === '전체' ||
-                                (verificationFilter === '검증됨' && doc.isVerified) ||
-                                (verificationFilter === '검증 중' && !doc.isVerified)
+                                (verificationFilter === '검증됨' && doc.verificationStatus === 'verified') ||
+                                (verificationFilter === '검증 중' && doc.verificationStatus === 'verifying') ||
+                                (verificationFilter === '미검증' && doc.verificationStatus === 'unverified')
       
       return matchesSearch && matchesCategory && matchesVerification
     })
@@ -231,17 +270,11 @@ export default function DocsPage() {
                   <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                 </button>
 
-                <select
+                <Dropdown
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="rounded-md border px-3 py-2 text-sm"
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSortBy}
+                  options={sortOptions}
+                />
               </div>
             </div>
 
@@ -250,15 +283,16 @@ export default function DocsPage() {
               <div className="mt-4 flex flex-wrap gap-4 border-t pt-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">검증 상태:</span>
-                  <select
+                  <Dropdown
                     value={verificationFilter}
-                    onChange={(e) => setVerificationFilter(e.target.value)}
-                    className="rounded border px-2 py-1 text-sm"
-                  >
-                    <option value="전체">전체</option>
-                    <option value="검증됨">검증됨</option>
-                    <option value="검증 중">검증 중</option>
-                  </select>
+                    onChange={setVerificationFilter}
+                    options={[
+                      { value: '전체', label: '전체' },
+                      { value: '검증됨', label: '검증됨' },
+                      { value: '검증 중', label: '검증 중' },
+                      { value: '미검증', label: '미검증' }
+                    ]}
+                  />
                 </div>
               </div>
             )}
@@ -290,15 +324,20 @@ export default function DocsPage() {
                     >
                       {doc.category}
                     </span>
-                    {doc.isVerified ? (
+                    {doc.verificationStatus === 'verified' ? (
                       <span className="flex items-center text-xs text-green-600 dark:text-green-400">
                         <CheckCircle className="mr-1 h-3 w-3" />
                         검증됨
                       </span>
-                    ) : (
-                      <span className="flex items-center text-xs text-yellow-600 dark:text-yellow-400">
-                        <AlertCircle className="mr-1 h-3 w-3" />
+                    ) : doc.verificationStatus === 'verifying' ? (
+                      <span className="flex items-center text-xs text-blue-600 dark:text-blue-400">
+                        <Timer className="mr-1 h-3 w-3" />
                         검증 중
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                        <AlertCircle className="mr-1 h-3 w-3" />
+                        미검증
                       </span>
                     )}
                   </div>
