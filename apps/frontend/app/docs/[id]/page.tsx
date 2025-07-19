@@ -6,20 +6,44 @@ import rehypeRaw from 'rehype-raw'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import CodeBlock from '@/components/markdown/CodeBlock'
+import DocumentActions from '@/components/docs/DocumentActions'
 import { 
   ArrowLeft, 
   Clock, 
   Eye, 
   CheckCircle, 
   AlertCircle,
+  BookOpen,
+  Timer,
   ThumbsUp,
   ThumbsDown,
-  Share2,
-  BookOpen
+  Share2
 } from 'lucide-react'
 
+// 문서 검증 상태 타입
+type VerificationStatus = 'unverified' | 'verifying' | 'verified'
+
+interface Document {
+  id: number
+  title: string
+  category: string
+  createdAt: string
+  updatedAt: string
+  viewCount: number
+  verificationStatus: VerificationStatus
+  author: string
+  verifiedBy: string | null
+  excerpt: string
+  content: string
+  upvotes: number
+  downvotes: number
+  readingTime: number
+  verificationStartedAt?: string
+  verificationEndAt?: string
+}
+
 // Mock data - 실제로는 API에서 가져옴
-const mockDocs = [
+const mockDocs: Document[] = [
   {
     id: 1,
     title: "React 19의 새로운 기능: Server Components 완벽 가이드",
@@ -27,7 +51,7 @@ const mockDocs = [
     createdAt: "2025-01-19",
     updatedAt: "2025-01-19",
     viewCount: 1234,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
     author: "AI Writer",
     verifiedBy: "김개발자",
     excerpt: "React 19에서 도입된 Server Components는 서버에서 렌더링되는 새로운 컴포넌트 타입입니다.",
@@ -117,7 +141,7 @@ Server Components는 React 19의 핵심 기능으로, 적절히 활용하면 성
     createdAt: "2025-01-18",
     updatedAt: "2025-01-18",
     viewCount: 892,
-    isVerified: true,
+    verificationStatus: 'verified' as VerificationStatus,
     author: "AI Writer",
     verifiedBy: "박타입",
     excerpt: "TypeScript 5.0은 성능 개선과 함께 여러 새로운 기능을 도입했습니다.",
@@ -161,6 +185,66 @@ function createArray<const T>(items: readonly T[]): T[] {
     upvotes: 89,
     downvotes: 3,
     readingTime: 8
+  },
+  {
+    id: 11,
+    title: "React Native 앱 성능 최적화 완벽 가이드",
+    category: "React",
+    createdAt: "2025-01-19",
+    updatedAt: "2025-01-19",
+    viewCount: 234,
+    verificationStatus: 'unverified' as VerificationStatus,
+    author: "AI Writer",
+    verifiedBy: null,
+    excerpt: "React Native 앱의 성능을 최적화하는 다양한 기법들을 소개합니다.",
+    content: `
+# React Native 앱 성능 최적화 완벽 가이드
+
+React Native 앱의 성능을 최적화하는 것은 사용자 경험을 향상시키는 핵심 요소입니다. 이 가이드에서는 다양한 최적화 기법을 소개합니다.
+
+## 메모리 관리
+
+### 1. 불필요한 리렌더링 방지
+React.memo와 useMemo를 활용하여 불필요한 컴포넌트 리렌더링을 방지합니다:
+
+\`\`\`javascript
+const MemoizedComponent = React.memo(({ data }) => {
+  return <View>{/* 컴포넌트 내용 */}</View>
+})
+\`\`\`
+
+### 2. 메모리 누수 방지
+타이머나 이벤트 리스너는 반드시 정리해야 합니다:
+
+\`\`\`javascript
+useEffect(() => {
+  const timer = setTimeout(() => {
+    // 작업 수행
+  }, 1000)
+  
+  return () => clearTimeout(timer)
+}, [])
+\`\`\`
+
+## 렌더링 최적화
+
+FlatList를 사용할 때는 다음과 같은 최적화를 적용합니다:
+
+1. **getItemLayout** 제공
+2. **keyExtractor** 최적화
+3. **removeClippedSubviews** 활성화
+
+## 네이티브 모듈 활용
+
+성능이 중요한 작업은 네이티브 모듈로 구현하여 성능을 향상시킬 수 있습니다.
+
+## 마무리
+
+React Native 앱 성능 최적화는 지속적인 과정입니다. 프로파일링 도구를 활용하여 병목 지점을 찾고 개선해 나가세요.
+    `,
+    upvotes: 0,
+    downvotes: 0,
+    readingTime: 10
   }
 ]
 
@@ -181,7 +265,8 @@ interface DocPageProps {
 
 export default async function DocPage({ params }: DocPageProps) {
   const { id } = await params
-  const doc = mockDocs.find(d => d.id === parseInt(id))
+  const parsedId = parseInt(id)
+  const doc = mockDocs.find(d => d.id === parsedId)
   
   if (!doc) {
     notFound()
@@ -217,15 +302,20 @@ export default async function DocPage({ params }: DocPageProps) {
                 >
                   {doc.category}
                 </span>
-                {doc.isVerified ? (
+                {doc.verificationStatus === 'verified' ? (
                   <span className="flex items-center text-sm text-green-600 dark:text-green-400">
                     <CheckCircle className="mr-1 h-4 w-4" />
                     검증됨
                   </span>
-                ) : (
-                  <span className="flex items-center text-sm text-yellow-600 dark:text-yellow-400">
-                    <AlertCircle className="mr-1 h-4 w-4" />
+                ) : doc.verificationStatus === 'verifying' ? (
+                  <span className="flex items-center text-sm text-blue-600 dark:text-blue-400">
+                    <Timer className="mr-1 h-4 w-4" />
                     검증 중
+                  </span>
+                ) : (
+                  <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <AlertCircle className="mr-1 h-4 w-4" />
+                    미검증
                   </span>
                 )}
               </div>
@@ -261,22 +351,14 @@ export default async function DocPage({ params }: DocPageProps) {
               </div>
 
               {/* Actions */}
-              <div className="mt-6 flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent">
-                    <ThumbsUp className="h-4 w-4" />
-                    {doc.upvotes}
-                  </button>
-                  <button className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent">
-                    <ThumbsDown className="h-4 w-4" />
-                    {doc.downvotes}
-                  </button>
-                </div>
-                <button className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent">
-                  <Share2 className="h-4 w-4" />
-                  공유
-                </button>
-              </div>
+              <DocumentActions initialDoc={{
+                id: doc.id,
+                verificationStatus: doc.verificationStatus,
+                upvotes: doc.upvotes,
+                downvotes: doc.downvotes,
+                verificationStartedAt: doc.verificationStartedAt,
+                verificationEndAt: doc.verificationEndAt
+              }} />
             </div>
           </div>
         </section>
@@ -330,7 +412,7 @@ export default async function DocPage({ params }: DocPageProps) {
                         {children}
                       </blockquote>
                     ),
-                    code: ({ children, className, ...props }) => {
+                    code: ({ children, className }) => {
                       const isInline = !className
                       if (isInline) {
                         return (
@@ -384,30 +466,6 @@ export default async function DocPage({ params }: DocPageProps) {
           </div>
         </section>
 
-        {/* Footer Actions */}
-        <section className="border-t py-8">
-          <div className="container">
-            <div className="mx-auto max-w-4xl">
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-                <div className="text-center sm:text-left">
-                  <p className="text-sm text-muted-foreground">
-                    이 문서가 도움이 되었나요?
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-2 rounded-md border px-4 py-2 text-sm hover:bg-accent">
-                    <ThumbsUp className="h-4 w-4" />
-                    도움됨 ({doc.upvotes})
-                  </button>
-                  <button className="flex items-center gap-2 rounded-md border px-4 py-2 text-sm hover:bg-accent">
-                    <ThumbsDown className="h-4 w-4" />
-                    개선 필요 ({doc.downvotes})
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Related Documents */}
         <section className="border-t bg-muted/30 py-8">
@@ -432,7 +490,7 @@ export default async function DocPage({ params }: DocPageProps) {
                         >
                           {relatedDoc.category}
                         </span>
-                        {relatedDoc.isVerified && (
+                        {relatedDoc.verificationStatus === 'verified' && (
                           <CheckCircle className="h-3 w-3 text-green-600" />
                         )}
                       </div>
@@ -452,11 +510,4 @@ export default async function DocPage({ params }: DocPageProps) {
       <Footer />
     </div>
   )
-}
-
-// Generate static paths for known document IDs
-export function generateStaticParams() {
-  return mockDocs.map((doc) => ({
-    id: doc.id.toString(),
-  }))
 }
