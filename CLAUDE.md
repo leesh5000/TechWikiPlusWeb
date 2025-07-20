@@ -4,253 +4,176 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TechWikiPlusApp is the frontend application for a crowdsourcing platform where AI-generated technical documentation is verified and improved by the community. This repository contains only the frontend application, while the backend is developed separately using Kotlin + Spring Boot.
+TechWikiPlusApp is a crowdsourcing platform frontend where AI-generated technical documentation is verified and improved by the community. Built with Next.js 15, it provides a comprehensive document review system with real-time voting and verification workflows.
 
 ## Technology Stack
 
-### Frontend
-
 - **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
+- **Language**: TypeScript (strict mode)
 - **React**: React 19
 - **Styling**: Tailwind CSS + shadcn/ui design system
 - **Icons**: Lucide React
 - **Markdown**: React Markdown with GitHub Flavored Markdown support
-- **Syntax Highlighting**: React Syntax Highlighter
-- **Utilities**: clsx, tailwind-merge
+- **Syntax Highlighting**: React Syntax Highlighter with VS Code-style themes
 
-### Backend
-
-- **Separate Repository**: Kotlin + Spring Boot (to be developed)
-- **API Communication**: RESTful endpoints
-
-## Project Structure
-
-```text
-TechWikiPlus/
-├── apps/
-│   └── frontend/              # Next.js 15 application
-│       ├── app/              # App Router pages
-│       │   ├── docs/         # Document-related pages
-│       │   │   ├── [id]/     # Dynamic document routes
-│       │   │   │   ├── review/   # Document verification pages
-│       │   │   │   └── page.tsx  # Document detail page
-│       │   │   └── page.tsx  # Document listing page
-│       │   ├── contribute/   # Contribution pages
-│       │   └── layout.tsx    # Root layout
-│       ├── components/       # React components
-│       │   ├── docs/         # Document-specific components
-│       │   ├── home/         # Homepage components
-│       │   ├── layout/       # Layout components (Header, Footer)
-│       │   ├── markdown/     # Markdown rendering components
-│       │   └── ui/           # Reusable UI components
-│       ├── lib/              # Utilities and helpers
-│       └── styles/           # Global CSS
-├── docs/                     # Project documentation (planning, PRD, TRD)
-├── CLAUDE.md                 # AI assistant guidance
-└── README.md                 # Project overview
-```
-
-## Common Commands
+## Essential Commands
 
 ```bash
-# Navigate to frontend directory
-cd apps/frontend
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm run start
-
-# Lint code
-npm run lint
+cd apps/frontend    # Navigate to frontend
+npm install         # Install dependencies
+npm run dev         # Development server (http://localhost:3000)
+npm run build       # Production build
+npm run start       # Production server
+npm run lint        # ESLint check
+npx tsc --noEmit   # TypeScript type check
 ```
 
-## Frontend Features
+**Note**: No test framework is currently configured. Consider adding Jest/React Testing Library when needed.
 
-### Implemented
+## Critical Architecture Patterns
 
-- [x] Responsive design with Tailwind CSS + shadcn/ui
-- [x] Dark mode support with theme toggle
-- [x] Mobile-friendly UI with responsive navigation
-- [x] Homepage with hero section and feature showcase
-- [x] Header/Navigation with search bar
-- [x] Document listing page with filtering and search
-- [x] Document detail pages with markdown rendering
-- [x] Document verification/review system with line-by-line comments
-- [x] Real-time countdown timers for verification deadlines
-- [x] Interactive voting system for document verification
-- [x] Custom dropdown components with consistent styling
-- [x] Code syntax highlighting in documents
-- [x] Responsive document cards with status indicators
-
-### To be Implemented
-
-- [ ] Contribution page
-- [ ] Leaderboard page  
-- [ ] User authentication (when backend is ready)
-- [ ] Real-time notifications
-- [ ] Advanced search with filters
-- [ ] Document editing interface
-- [ ] User profile pages
-
-## Architecture & Development Patterns
-
-### Component Architecture
-
-The application follows a clear separation between Server and Client Components:
-
-- **Server Components**: Handle data fetching, static rendering (`/app/docs/[id]/page.tsx`, `/app/docs/[id]/review/page.tsx`)
-- **Client Components**: Manage interactivity and state (`ReviewPageContent.tsx`, `DocumentActions.tsx`)
-- **Shared Components**: Reusable UI components in `/components/ui/` and `/components/layout/`
-
-### Document Verification System
-
-Core architecture for the document review workflow:
-- `VerificationStatus`: 'unverified' | 'verifying' | 'verified'
-- Real-time countdown timers for verification deadlines
-- Line-by-line comment system with type categorization
-- Vote aggregation during verification period
-
-### Mock Data Patterns
-
-Currently uses mock data with realistic structure:
-- Document objects with verification status and timestamps
-- Comment system with author, type, and timestamp
-- Consistent data shape for easy API integration later
-
-### Custom Component Patterns
-
-- **Dropdown Component**: Centralized, consistent dropdown UI across the app
-- **DocumentActions**: Stateful component handling verification workflows
-- **Markdown Rendering**: Custom components for code highlighting and responsive layout
-
-### Development Guidelines
-
-#### Code Standards
-
-- **TypeScript**: All new code must use TypeScript with strict typing
-- **Components**: Use React functional components with hooks
-- **Styling**: Use Tailwind CSS classes following the shadcn/ui design system
-- **File naming**: Use kebab-case for files, PascalCase for components
-- **Imports**: Use absolute imports with `@/` prefix
-
-#### Next.js 15 Specific Requirements
-
-- **Dynamic Routes**: Always await `params` in page components due to Next.js 15 requirement
-- **Server/Client Separation**: Never use async in Client Components marked with 'use client'
-- **Component Composition**: Separate data fetching (Server) from interactivity (Client)
-
-### Git Workflow
-
-- **Branch Strategy**: GitHub Flow
-  - `main`: Main branch
-  - `feature/*`: Feature development
-
-### Code Quality
-
-- Write clean, readable code following React patterns
-- Use semantic HTML elements for accessibility
-- Ensure proper TypeScript typing for all props and state
-- Follow established component patterns for consistency
-
-## API Integration
-
-When the backend is ready, the frontend will communicate via REST API endpoints. The API client will be implemented to handle:
-
-- Authentication and authorization
-- Content management
-- User management
-- Search and filtering
-
-## Deployment
-
-### Production Build
-
-```bash
-cd apps/frontend
-npm run build
-```
-
-The build output will be in the `.next` directory and can be deployed to any platform that supports Next.js applications.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port Conflicts**
-   - Default port (3000) might be in use
-   - Use `PORT=3001 npm run dev` to use different port
-
-2. **Dependency Issues**
-   - Run `npm install` to reinstall dependencies
-   - Delete `node_modules` and reinstall if needed
-
-3. **Build Errors**
-   - Check TypeScript errors with `npx tsc --noEmit`
-   - Ensure all imports are correct
-
-## Project Goals
-
-This frontend application aims to provide:
-
-1. **Clean UI/UX**: Modern, responsive design
-2. **Performance**: Fast loading and smooth interactions
-3. **Accessibility**: Usable by everyone
-4. **Maintainability**: Well-structured, documented code
-5. **Scalability**: Easy to extend with new features
-
-## Next.js 15 Development Notes
-
-### Critical Next.js 15 Patterns
-
-**Dynamic Route Parameters**: All dynamic route components must await params:
+### Next.js 15 Dynamic Routes
+All dynamic route components MUST await params:
 ```typescript
-// CORRECT: app/docs/[id]/page.tsx
-export default async function DocPage({ params }: { params: Promise<{ id: string }> }) {
+// ✅ CORRECT
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  // Use id...
 }
 
-// INCORRECT: Will cause build errors
-export default function DocPage({ params }: { params: { id: string } }) {
+// ❌ WRONG - Will cause build errors
+export default function Page({ params }: { params: { id: string } }) {
   const id = params.id // Error in Next.js 15
 }
 ```
 
-**Server vs Client Component Separation**:
-- Server Components: Async, handle data fetching, no state/effects
-- Client Components: 'use client', handle user interactions, state management
-- Never mix: Async Client Components will fail
+### Document Review System Architecture
 
-### Current Implementation Patterns
+The review system (`/app/docs/[id]/review/ReviewPageContent.tsx`) implements:
 
-**Document Verification Workflow**:
-1. Server Component fetches document data (`page.tsx`)
-2. Client Component handles interactive verification (`ReviewPageContent.tsx`)
-3. Real-time updates use useEffect with cleanup for timers
-4. Comment system uses local state with mock data structure
+1. **Multi-line Selection**: Drag to select multiple lines for commenting
+2. **Comment System**:
+   - Types: '개선' (improvement), '오류' (error), '제안' (suggestion), '질문' (question)
+   - Suggested changes with strikethrough original + green replacement text
+   - Auto-expanding textareas
+   - Keyboard shortcuts: Alt+Enter (submit), ESC (cancel)
+3. **Event Handling**: Critical `stopPropagation` on button `onMouseDown` to prevent conflicts with drag selection
+4. **Voting System**: Real-time vote counting during 72-hour verification period
 
-**Component Composition**:
-- Layout components (`Header`, `Footer`) are Client Components for interactivity
-- Page components are Server Components for data fetching  
-- Interactive widgets (`DocumentActions`, `Dropdown`) are Client Components
+### Theme System (VS Code Style Dark Mode)
 
-## Notes for AI Assistant
+Global CSS variables in `globals.css`:
+```css
+.dark {
+  --background: 0 0% 11.8%;    /* VS Code #1e1e1e equivalent */
+  --card: 0 0% 14.5%;          /* VS Code #252526 equivalent */
+  --foreground: 0 0% 83.1%;    /* Soft gray, not pure white */
+  --border: 0 0% 27.5%;        /* More visible borders */
+}
+```
 
-- This is a frontend-only project with mock data for development
-- Backend API is not yet implemented - maintain mock data patterns
-- Focus on UI/UX improvements following shadcn/ui design system
-- Ensure responsive design for all screen sizes (mobile-first approach)
-- Maintain consistent styling with Tailwind CSS utility classes
-- Follow Next.js 15 App Router conventions strictly (especially async params)
-- When adding new features, separate Server and Client Components appropriately
-- Use the established Dropdown component pattern for form controls
-- Follow the document verification workflow patterns for new review features
+Theme persistence via localStorage in `Header.tsx`:
+- Checks `localStorage.getItem('theme')`
+- Falls back to system preference
+- Smooth transitions with CSS
+
+### Real-time Countdown System
+
+Verification countdown implementation pattern:
+```typescript
+// ReviewCountdown component pattern
+const calculateTimeRemaining = (endTime: string) => {
+  const difference = new Date(endTime).getTime() - new Date().getTime()
+  // Returns formatted string: "X시간 Y분 Z초 남음"
+}
+
+useEffect(() => {
+  const timer = setInterval(() => {
+    setTimeRemaining(calculateTimeRemaining(deadline))
+  }, 1000)
+  return () => clearInterval(timer)
+}, [deadline])
+```
+
+### Mock Data Patterns
+
+All mock data follows consistent structure for easy API integration:
+```typescript
+type VerificationStatus = 'unverified' | 'verifying' | 'verified'
+
+interface Document {
+  id: number
+  verificationStatus: VerificationStatus
+  verificationStartedAt?: string  // ISO string
+  verificationEndAt?: string      // ISO string
+  upvotes: number
+  downvotes: number
+}
+```
+
+## Component Patterns
+
+### Server vs Client Components
+- **Server Components**: Data fetching, no state/effects (`page.tsx` files)
+- **Client Components**: Interactivity, state management (use `'use client'`)
+- **Never mix**: Async Client Components will fail
+
+### Reusable Components
+- **Dropdown**: Centralized dropdown with click-outside handling
+- **DocumentActions**: Handles verification state transitions and voting
+- **CodeBlock**: Syntax highlighting with dark mode detection
+
+## Key Implementation Details
+
+### Review Page Read-Only Mode
+`ReviewPageContent` accepts props for reusability:
+```typescript
+interface ReviewPageContentProps {
+  doc: Document
+  readOnly?: boolean           // Disables editing
+  initialComments?: ReviewComment[]  // Pre-populated comments
+}
+```
+
+### Auto-expanding Textareas
+```typescript
+const adjustHeight = (element: HTMLTextAreaElement) => {
+  element.style.height = 'auto'
+  element.style.height = `${element.scrollHeight}px`
+}
+```
+
+### Tooltip Positioning
+Comments tooltip appears on hover with debounced show/hide to prevent flickering.
+
+## Development Workflow
+
+1. **Feature Development**: Create feature branches from `main`
+2. **Component Creation**: Check existing patterns in `/components`
+3. **Styling**: Use Tailwind classes, follow shadcn/ui conventions
+4. **Dark Mode**: Test both light and dark modes
+5. **Responsive**: Mobile-first approach, test all breakpoints
+
+## Current Implementation Status
+
+### Completed Features
+- Document listing with search/filter
+- Document detail with markdown rendering  
+- Review system with multi-line comments
+- Verification workflow with 72-hour countdown
+- Dark mode with VS Code-style colors
+- Responsive design for all screens
+
+### Pending Features
+- Backend API integration (currently using mock data)
+- User authentication
+- Real-time notifications
+- Document editing interface
+- Contribution/Leaderboard pages
+
+## Important Notes
+
+- All data is currently mocked - maintain consistent patterns for future API integration
+- Review system's `+ 버튼` click handling requires `onMouseDown` with `stopPropagation`
+- Countdown timers auto-update document status after 72 hours (mock behavior)
+- Theme changes use CSS transitions for smooth switching
+- Always test drag selection in review mode after any event handler changes
