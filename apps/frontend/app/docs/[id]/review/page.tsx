@@ -19,6 +19,7 @@ interface Document {
   upvotes: number
   downvotes: number
   readingTime: number
+  verificationDeadline?: string // 검수 마감 시간
 }
 
 interface ReviewPageProps {
