@@ -3,7 +3,7 @@ import { Github, Twitter, Mail, FileText } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-background">
+    <footer className="border-t dark:border-border/70 bg-background dark:bg-card">
       <div className="container py-8 md:py-12">
         <div className="grid gap-8 md:grid-cols-4">
           {/* About Section */}
@@ -84,19 +84,19 @@ export default function Footer() {
                 href="https://github.com/leesh5000/TechWikiPlus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Github className="h-5 w-5" />
               </a>
               <a
                 href="#"
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Twitter className="h-5 w-5" />
               </a>
               <a
                 href="mailto:contact@techwikiplus.com"
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Mail className="h-5 w-5" />
               </a>
@@ -108,7 +108,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-8 border-t pt-8">
+        <div className="mt-8 border-t dark:border-border/70 pt-8">
           <div className="flex flex-col items-center justify-between space-y-2 md:flex-row md:space-y-0">
             <p className="text-sm text-muted-foreground">
               © 2025 TechWiki+. All rights reserved.

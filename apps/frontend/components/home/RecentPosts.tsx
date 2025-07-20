@@ -60,12 +60,12 @@ const mockPosts = [
 ]
 
 const categoryColors: Record<string, string> = {
-  React: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-  DevOps: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  API: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  React: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+  DevOps: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400",
+  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+  API: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
 }
 
 export default function RecentPosts() {
@@ -87,13 +87,13 @@ export default function RecentPosts() {
           {mockPosts.map((post) => (
             <article
               key={post.id}
-              className="group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-all hover:shadow-md"
+              className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card dark:bg-card shadow-sm dark:shadow-none transition-all hover:shadow-md dark:hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/30"
             >
               {/* Category Badge */}
-              <div className="flex items-center justify-between border-b p-4">
+              <div className="flex items-center justify-between border-b border-border dark:border-border/70 p-4">
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    categoryColors[post.category] || "bg-gray-100 text-gray-800"
+                    categoryColors[post.category] || "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-400"
                   }`}
                 >
                   {post.category}

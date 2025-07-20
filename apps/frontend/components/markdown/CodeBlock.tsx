@@ -38,7 +38,7 @@ export default function CodeBlock({ children, className, inline }: CodeBlockProp
   // If it's inline code, render simple code element
   if (inline) {
     return (
-      <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">
+      <code className="bg-muted dark:bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">
         {children}
       </code>
     )
@@ -63,7 +63,7 @@ export default function CodeBlock({ children, className, inline }: CodeBlockProp
         </span>
         <button
           onClick={handleCopy}
-          className="code-block-copy-button flex items-center gap-1 px-2 py-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          className="code-block-copy-button flex items-center gap-1 px-2 py-1 rounded hover:bg-muted dark:hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           title={copied ? 'Copied!' : 'Copy code'}
         >
           {copied ? (

@@ -154,15 +154,15 @@ const sortOptions = [
 ]
 
 const categoryColors: Record<string, string> = {
-  React: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-  DevOps: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  API: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-  Vue: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300",
-  AWS: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-  Database: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300"
+  React: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+  DevOps: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400",
+  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+  API: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+  Vue: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400",
+  AWS: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+  Database: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400"
 }
 
 export default function DocsPage() {
@@ -213,7 +213,7 @@ export default function DocsPage() {
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="border-b bg-muted/30 py-12 md:py-16">
+        <section className="border-b bg-muted/30 dark:bg-muted/20 py-12 md:py-16">
           <div className="container">
             <div className="mx-auto max-w-3xl text-center">
               <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
@@ -231,7 +231,7 @@ export default function DocsPage() {
                   placeholder="문서 제목이나 내용으로 검색..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-12 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-lg border border-input bg-background dark:bg-card pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-primary/50"
                 />
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function DocsPage() {
                     className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                       selectedCategory === category
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        : 'bg-muted dark:bg-muted/30 text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/40'
                     }`}
                   >
                     {category}
@@ -263,7 +263,7 @@ export default function DocsPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent"
+                  className="flex items-center gap-2 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm font-medium hover:bg-accent dark:hover:bg-accent"
                 >
                   <Filter className="h-4 w-4" />
                   필터
@@ -280,7 +280,7 @@ export default function DocsPage() {
 
             {/* Extended Filters */}
             {showFilters && (
-              <div className="mt-4 flex flex-wrap gap-4 border-t pt-4">
+              <div className="mt-4 flex flex-wrap gap-4 border-t dark:border-border/70 pt-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">검증 상태:</span>
                   <Dropdown
@@ -313,10 +313,10 @@ export default function DocsPage() {
               {filteredDocs.map((doc) => (
                 <article
                   key={doc.id}
-                  className="group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-all hover:shadow-md"
+                  className="group relative flex flex-col overflow-hidden rounded-lg border border-border dark:border-border/70 bg-card dark:bg-card shadow-sm dark:shadow-none transition-all hover:shadow-md dark:hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/30"
                 >
                   {/* Category Badge */}
-                  <div className="flex items-center justify-between border-b p-4">
+                  <div className="flex items-center justify-between border-b dark:border-border/70 p-4">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         categoryColors[doc.category] || "bg-gray-100 text-gray-800"

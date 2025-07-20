@@ -47,22 +47,22 @@ export default function Dropdown({ value, options, onChange, className = '' }: D
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+        className="flex items-center justify-between gap-2 rounded-md border border-input dark:border-input/70 bg-background dark:bg-card px-3 py-2 text-sm text-foreground hover:bg-accent dark:hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-primary/50 transition-colors"
       >
         <span>{selectedLabel}</span>
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute left-1/2 z-10 mt-1 w-full min-w-[160px] -translate-x-1/2 rounded-md border border-input bg-background shadow-md">
+        <div className="absolute left-1/2 z-10 mt-1 w-full min-w-[160px] -translate-x-1/2 rounded-md border border-input dark:border-input/70 bg-background dark:bg-card shadow-md dark:shadow-primary/5">
           <div className="py-1">
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
-                  value === option.value ? 'bg-accent' : ''
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-accent dark:hover:bg-accent transition-colors ${
+                  value === option.value ? 'bg-accent dark:bg-accent' : ''
                 }`}
               >
                 {option.label}

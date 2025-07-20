@@ -61,7 +61,7 @@ export default function HeroSection() {
             </Link>
             <Link
               href="/contribute"
-              className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background dark:bg-card px-8 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               기여 시작하기
             </Link>
@@ -73,7 +73,7 @@ export default function HeroSection() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="flex flex-col items-center rounded-lg border bg-card p-6 text-center shadow-sm"
+              className="flex flex-col items-center rounded-lg border border-border bg-card dark:bg-card p-6 text-center shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/30 transition-all"
             >
               <feature.icon className="mb-3 h-10 w-10 text-primary" />
               <h3 className="mb-1 font-semibold">{feature.title}</h3>

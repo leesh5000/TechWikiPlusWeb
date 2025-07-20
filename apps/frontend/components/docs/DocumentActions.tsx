@@ -105,14 +105,14 @@ export default function DocumentActions({ initialDoc }: DocumentActionsProps) {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => handleVote('up')}
-              className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent"
+              className="flex items-center gap-1 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent transition-colors"
             >
               <ThumbsUp className="h-4 w-4" />
               {doc.upvotes}
             </button>
             <button 
               onClick={() => handleVote('down')}
-              className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent"
+              className="flex items-center gap-1 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent transition-colors"
             >
               <ThumbsDown className="h-4 w-4" />
               {doc.downvotes}
@@ -121,17 +121,17 @@ export default function DocumentActions({ initialDoc }: DocumentActionsProps) {
         )}
         {doc.verificationStatus === 'verified' && (
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent" disabled>
+            <button className="flex items-center gap-1 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent transition-colors opacity-50 cursor-not-allowed" disabled>
               <ThumbsUp className="h-4 w-4" />
               {doc.upvotes}
             </button>
-            <button className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent" disabled>
+            <button className="flex items-center gap-1 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent transition-colors opacity-50 cursor-not-allowed" disabled>
               <ThumbsDown className="h-4 w-4" />
               {doc.downvotes}
             </button>
           </div>
         )}
-        <button className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent">
+        <button className="flex items-center gap-1 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent transition-colors">
           <Share2 className="h-4 w-4" />
           공유
         </button>

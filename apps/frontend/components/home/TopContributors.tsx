@@ -70,7 +70,7 @@ const getRankIcon = (rank: number) => {
 
 export default function TopContributors() {
   return (
-    <section className="bg-muted/50 py-16 md:py-24">
+    <section className="bg-muted/50 dark:bg-muted/20 py-16 md:py-24">
       <div className="container">
         {/* Section Header */}
         <div className="mb-12 text-center">
@@ -84,8 +84,8 @@ export default function TopContributors() {
 
         <div className="mx-auto max-w-4xl">
           {/* Leaderboard */}
-          <div className="overflow-hidden rounded-lg border bg-card">
-            <div className="grid grid-cols-7 gap-4 border-b bg-muted/50 p-4 text-sm font-medium">
+          <div className="overflow-hidden rounded-lg border border-border bg-card dark:bg-card">
+            <div className="grid grid-cols-7 gap-4 border-b border-border bg-muted/50 dark:bg-muted/20 p-4 text-sm font-medium">
               <div>순위</div>
               <div className="col-span-2">기여자</div>
               <div className="text-center">포인트</div>
@@ -97,7 +97,7 @@ export default function TopContributors() {
             {mockContributors.map((contributor) => (
               <div
                 key={contributor.id}
-                className="grid grid-cols-7 items-center gap-4 border-b p-4 transition-colors hover:bg-muted/50"
+                className="grid grid-cols-7 items-center gap-4 border-b border-border dark:border-border/70 p-4 transition-colors hover:bg-muted/50 dark:hover:bg-muted/20"
               >
                 {/* Rank */}
                 <div className="flex items-center">
@@ -109,7 +109,7 @@ export default function TopContributors() {
                   <img
                     src={contributor.avatar}
                     alt={contributor.username}
-                    className="h-10 w-10 rounded-full border bg-background"
+                    className="h-10 w-10 rounded-full border border-border bg-background dark:bg-card"
                   />
                   <div>
                     <Link
@@ -119,7 +119,7 @@ export default function TopContributors() {
                       @{contributor.username}
                     </Link>
                     {contributor.badge && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 dark:bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
                         {contributor.badge === "gold" && "🥇 Gold"}
                         {contributor.badge === "silver" && "🥈 Silver"}
                         {contributor.badge === "bronze" && "🥉 Bronze"}
@@ -151,7 +151,7 @@ export default function TopContributors() {
 
                 {/* Trend */}
                 <div className="flex justify-center">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             ))}

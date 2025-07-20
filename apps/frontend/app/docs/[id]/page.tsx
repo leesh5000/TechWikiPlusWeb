@@ -249,12 +249,12 @@ React Native 앱 성능 최적화는 지속적인 과정입니다. 프로파일�
 ]
 
 const categoryColors: Record<string, string> = {
-  React: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-  DevOps: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  API: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  React: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+  DevOps: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400",
+  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+  API: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
 }
 
 interface DocPageProps {
@@ -277,7 +277,7 @@ export default async function DocPage({ params }: DocPageProps) {
       <Header />
       <main className="flex-1">
         {/* Breadcrumb */}
-        <section className="border-b py-4">
+        <section className="border-b dark:border-border/70 py-4">
           <div className="container">
             <Link
               href="/docs"
@@ -290,7 +290,7 @@ export default async function DocPage({ params }: DocPageProps) {
         </section>
 
         {/* Document Header */}
-        <section className="border-b py-8">
+        <section className="border-b dark:border-border/70 py-8">
           <div className="container">
             <div className="mx-auto max-w-4xl">
               {/* Category & Verification Status */}
@@ -416,7 +416,7 @@ export default async function DocPage({ params }: DocPageProps) {
                       const isInline = !className
                       if (isInline) {
                         return (
-                          <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">
+                          <code className="bg-muted dark:bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">
                             {children}
                           </code>
                         )
@@ -439,18 +439,18 @@ export default async function DocPage({ params }: DocPageProps) {
                     ),
                     table: ({ children }) => (
                       <div className="overflow-x-auto mb-4">
-                        <table className="w-full border-collapse border border-border">
+                        <table className="w-full border-collapse border border-border dark:border-border/70">
                           {children}
                         </table>
                       </div>
                     ),
                     th: ({ children }) => (
-                      <th className="border border-border px-4 py-2 text-left bg-muted font-semibold">
+                      <th className="border border-border dark:border-border/70 px-4 py-2 text-left bg-muted dark:bg-muted font-semibold">
                         {children}
                       </th>
                     ),
                     td: ({ children }) => (
-                      <td className="border border-border px-4 py-2 text-left">
+                      <td className="border border-border dark:border-border/70 px-4 py-2 text-left">
                         {children}
                       </td>
                     ),
@@ -468,7 +468,7 @@ export default async function DocPage({ params }: DocPageProps) {
 
 
         {/* Related Documents */}
-        <section className="border-t bg-muted/30 py-8">
+        <section className="border-t dark:border-border/70 bg-muted/30 dark:bg-muted/20 py-8">
           <div className="container">
             <div className="mx-auto max-w-4xl">
               <h3 className="mb-6 text-xl font-semibold">관련 문서</h3>
@@ -480,8 +480,7 @@ export default async function DocPage({ params }: DocPageProps) {
                     <Link
                       key={relatedDoc.id}
                       href={`/docs/${relatedDoc.id}`}
-                      className="group block rounded-lg border bg-background p-4 hover:shadow-md"
-                    >
+                      className="group block rounded-lg border border-border dark:border-border/70 bg-background dark:bg-card p-4 hover:shadow-md dark:hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/30 transition-all">
                       <div className="mb-2 flex items-center gap-2">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -491,7 +490,7 @@ export default async function DocPage({ params }: DocPageProps) {
                           {relatedDoc.category}
                         </span>
                         {relatedDoc.verificationStatus === 'verified' && (
-                          <CheckCircle className="h-3 w-3 text-green-600" />
+                          <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
                         )}
                       </div>
                       <h4 className="mb-1 font-medium group-hover:text-primary">
