@@ -159,7 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Mock: 사용자 추가 (실제로는 서버에 저장)
-    MOCK_USERS.push({ ...newUser, password: pendingUser.password })
+    MOCK_USERS.push({ 
+      ...newUser, 
+      password: pendingUser.password,
+      role: 'user' as const
+    })
 
     // 임시 사용자 삭제
     PENDING_USERS.delete(email)
