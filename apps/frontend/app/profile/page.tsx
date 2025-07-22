@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { User, Mail, Calendar, Shield, Trophy, FileText, CheckCircle, DollarSign, Settings, LogOut, TrendingUp } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import AuthGuard from '@/components/AuthGuard'
@@ -151,14 +152,12 @@ export default function ProfilePage() {
               </div>
               <Trophy className="h-8 w-8 text-yellow-600" />
             </div>
-            {user.points >= 1000 && (
-              <button 
-                onClick={handleCashout}
-                className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                환급 신청 가능
-              </button>
-            )}
+            <Link
+              href="/points"
+              className="mt-3 w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              포인트 관리
+            </Link>
           </div>
 
           <div className="bg-card rounded-lg shadow-sm border p-4">
