@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic'
 import { memo, useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 // 동적 임포트로 번들 크기 최적화
 const ReactMarkdown = dynamic(() => import('react-markdown'), {
@@ -45,12 +47,8 @@ const MarkdownRenderer = memo(function MarkdownRenderer({ content }: MarkdownRen
   }, [content])
   return (
     <ReactMarkdown
-      remarkPlugins={[
-        () => import('remark-gfm').then(mod => mod.default)
-      ]}
-      rehypePlugins={[
-        () => import('rehype-raw').then(mod => mod.default)
-      ]}
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
       components={{
         h1: ({ children }) => (
           <h1 className="text-3xl font-bold mt-8 mb-4 text-foreground border-b pb-2">
