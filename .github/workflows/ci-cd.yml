@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - closed
 
 env:
   AWS_REGION: ap-northeast-2
@@ -179,7 +183,9 @@ jobs:
     name: Push to ECR
     needs: docker-build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     environment: AWS
     
     steps:
@@ -240,12 +246,14 @@ jobs:
           echo "- Deploy to ECS using the new image tag" >> $GITHUB_STEP_SUMMARY
           echo "- Monitor application health after deployment" >> $GITHUB_STEP_SUMMARY
 
-  # 배포 준비 (향후 ECS 배포 등 추가 가능)
-  deploy-prep:
-    name: Deployment Preparation
+  # EC2 서버로 배포
+  deploy:
+    name: Deploy to EC2
     needs: docker-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     environment: AWS
     
     steps:
@@ -259,14 +267,72 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           
-      - name: Create deployment manifest
+      - name: Setup SSH key
         run: |
-          echo "Deployment manifest created for commit ${{ github.sha }}"
-          echo "Ready for ECS deployment"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           
-      - name: Deployment readiness summary
+      - name: Create deployment directory on EC2
         run: |
-          echo "## 🎯 Deployment Ready" >> $GITHUB_STEP_SUMMARY
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            mkdir -p ~/techwikiplus-client-web
+            cd ~/techwikiplus-client-web
+          EOF
+          
+      - name: Copy docker-compose files to EC2
+        run: |
+          scp -i ~/.ssh/id_rsa docker-compose.prod.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/techwikiplus-client-web/
+          scp -i ~/.ssh/id_rsa .env.production.example ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/techwikiplus-client-web/
+          
+      - name: Deploy application
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/techwikiplus-client-web
+            
+            # ECR 로그인
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
+            
+            # 환경 변수 설정
+            export ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY }}
+            export IMAGE_TAG=${{ github.sha }}
+            
+            # 기존 컨테이너 정지 및 제거
+            docker compose -f docker-compose.prod.yml down || true
+            
+            # 새 이미지 pull
+            docker pull ${ECR_REPOSITORY}:${IMAGE_TAG}
+            
+            # 컨테이너 시작
+            docker compose -f docker-compose.prod.yml up -d
+            
+            # 잠시 대기
+            sleep 10
+            
+            # 헬스체크
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Deployment successful!"
+            else
+              echo "❌ Deployment failed - health check failed"
+              docker compose -f docker-compose.prod.yml logs
+              exit 1
+            fi
+          EOF
+          
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The application is ready to be deployed with the following image:" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Server** | \`${{ secrets.EC2_HOST }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image** | \`${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Directory** | \`~/techwikiplus-client-web\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployed At** | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Post-Deployment Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. SSH into the server and verify the .env file is properly configured" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check application logs: \`docker compose -f docker-compose.prod.yml logs\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Monitor application health" >> $GITHUB_STEP_SUMMARY

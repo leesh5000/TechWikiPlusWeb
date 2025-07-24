@@ -1,0 +1,21 @@
+# Development Dockerfile for Next.js application
+
+FROM node:20-alpine
+
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy package files
+COPY apps/frontend/package*.json ./
+
+# Install all dependencies
+RUN npm install
+
+# Copy application files
+COPY apps/frontend ./
+
+# Expose port
+EXPOSE 3000
+
+# Start development server
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,63 @@
+# syntax=docker/dockerfile:1.5
+# Multi-stage Dockerfile with BuildKit optimizations
+
+# Stage 1: Dependencies with cache mount
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy only package files for better cache utilization
+COPY apps/frontend/package*.json ./
+
+# Use cache mount for npm
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --cache /root/.npm
+
+# Stage 2: Builder with parallel processing
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
+COPY apps/frontend ./
+
+# Build with cache mount
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
+
+# Stage 3: Production dependencies with cache
+FROM node:20-alpine AS production-deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+COPY apps/frontend/package*.json ./
+
+# Install only production dependencies with cache
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev --cache /root/.npm
+
+# Stage 4: Runner (unchanged)
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy necessary files
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

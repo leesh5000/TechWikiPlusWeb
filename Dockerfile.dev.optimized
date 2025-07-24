@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1.5
+# Development Dockerfile with BuildKit optimizations
+
+FROM node:20-alpine
+
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy package files
+COPY apps/frontend/package*.json ./
+
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --cache /root/.npm
+
+# Don't copy source files - they'll be mounted as volume
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
