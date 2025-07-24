@@ -15,6 +15,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   NODE_VERSION: '20'
+  DEPLOY_DIR: ~/techwikiplus/client/web
 
 jobs:
   # 코드 품질 검사 - ESLint
@@ -277,20 +278,20 @@ jobs:
           
       - name: Create deployment directory on EC2
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
-            mkdir -p ~/techwikiplus-client-web
-            cd ~/techwikiplus-client-web
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << EOF
+            mkdir -p ${{ env.DEPLOY_DIR }}
+            cd ${{ env.DEPLOY_DIR }}
           EOF
           
       - name: Copy docker-compose files to EC2
         run: |
-          scp -i ~/.ssh/id_rsa docker-compose.prod.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/techwikiplus-client-web/
-          scp -i ~/.ssh/id_rsa .env.production.example ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/techwikiplus-client-web/
+          scp -i ~/.ssh/id_rsa docker-compose.prod.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ env.DEPLOY_DIR }}/
+          scp -i ~/.ssh/id_rsa .env.production.example ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ env.DEPLOY_DIR }}/
           
       - name: Deploy application
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ~/techwikiplus-client-web
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << EOF
+            cd ${{ env.DEPLOY_DIR }}
             
             # ECR 로그인
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
@@ -330,7 +331,7 @@ jobs:
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Server** | \`${{ secrets.EC2_HOST }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Image** | \`${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Directory** | \`~/techwikiplus-client-web\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Directory** | \`${{ env.DEPLOY_DIR }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Deployed At** | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⚠️ Post-Deployment Steps" >> $GITHUB_STEP_SUMMARY

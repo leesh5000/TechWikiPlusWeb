@@ -5,7 +5,11 @@
 
 set -e
 
+# 기본 배포 디렉토리 설정 (환경변수로 오버라이드 가능)
+DEPLOY_DIR=${DEPLOY_DIR:-~/techwikiplus-client-web}
+
 echo "🚀 TechWikiPlus Client 배포 시작..."
+echo "📁 배포 디렉토리: $DEPLOY_DIR"
 
 # 환경 변수 확인
 if [ -z "$ECR_REPOSITORY" ] || [ -z "$IMAGE_TAG" ]; then
@@ -14,7 +18,7 @@ if [ -z "$ECR_REPOSITORY" ] || [ -z "$IMAGE_TAG" ]; then
     exit 1
 fi
 
-cd ~/techwikiplus-client-web
+cd $DEPLOY_DIR
 
 # .env 파일 확인
 if [ ! -f .env ]; then
