@@ -1,0 +1,51 @@
+name: Pipeline Summary
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - completed
+
+jobs:
+  summary:
+    name: Generate Pipeline Summary
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
+    
+    steps:
+      - name: Pipeline Summary
+        env:
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          echo "# 📊 CI/CD 파이프라인 실행 요약" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$CONCLUSION" == "success" ]; then
+            echo "## ✅ 파이프라인 성공" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ 파이프라인 실패" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 실행 정보" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 워크플로우 | CI/CD Pipeline |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 ID | #${{ github.event.workflow_run.run_number }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 브랜치 | ${{ github.event.workflow_run.head_branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 커밋 | ${{ github.event.workflow_run.head_sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 시간 | ${{ github.event.workflow_run.created_at }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| [상세 보기]($WORKFLOW_URL) | 🔗 |" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔄 다음 단계" >> $GITHUB_STEP_SUMMARY
+          if [ "$CONCLUSION" == "success" ]; then
+            echo "- 배포된 애플리케이션 상태 확인" >> $GITHUB_STEP_SUMMARY
+            echo "- 모니터링 대시보드 확인" >> $GITHUB_STEP_SUMMARY
+            echo "- 사용자 피드백 수집" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- 실패한 단계 로그 확인" >> $GITHUB_STEP_SUMMARY
+            echo "- 오류 수정 후 재실행" >> $GITHUB_STEP_SUMMARY
+            echo "- 필요시 롤백 수행" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -39,8 +39,35 @@ jobs:
         run: npm ci
           
       - name: Run ESLint
+        id: eslint
         working-directory: apps/frontend
-        run: npm run lint
+        run: |
+          echo "## 🔍 ESLint 검사 시작" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # ESLint 실행 및 결과 캡처
+          if npm run lint > eslint-output.txt 2>&1; then
+            echo "### ✅ ESLint 검사 통과" >> $GITHUB_STEP_SUMMARY
+            echo "코드 품질 검사를 성공적으로 통과했습니다." >> $GITHUB_STEP_SUMMARY
+            echo "eslint_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "### ❌ ESLint 오류 발견" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -n 50 eslint-output.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "eslint_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+      - name: ESLint Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| ESLint 검사 | ${{ steps.eslint.outputs.eslint_status == 'success' && '✅ 통과' || '❌ 실패' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 시간 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
 
   # TypeScript 타입 체크
   typecheck:
@@ -63,8 +90,40 @@ jobs:
         run: npm ci
           
       - name: Run TypeScript check
+        id: typecheck
         working-directory: apps/frontend
-        run: npx tsc --noEmit
+        run: |
+          echo "## 📘 TypeScript 타입 검사 시작" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # TypeScript 검사 실행
+          if npx tsc --noEmit > tsc-output.txt 2>&1; then
+            echo "### ✅ TypeScript 검사 통과" >> $GITHUB_STEP_SUMMARY
+            echo "모든 타입이 올바르게 정의되어 있습니다." >> $GITHUB_STEP_SUMMARY
+            echo "typecheck_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "### ❌ TypeScript 타입 오류 발견" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`typescript" >> $GITHUB_STEP_SUMMARY
+            cat tsc-output.txt | head -n 30 >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "typecheck_status=failed" >> $GITHUB_OUTPUT
+            
+            # 오류 개수 집계
+            ERROR_COUNT=$(grep -c "error TS" tsc-output.txt || true)
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**총 ${ERROR_COUNT}개의 타입 오류가 발견되었습니다.**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          
+      - name: TypeScript Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript 검사 | ${{ steps.typecheck.outputs.typecheck_status == 'success' && '✅ 통과' || '❌ 실패' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 시간 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
 
   # 단위 테스트
   test:
@@ -87,10 +146,61 @@ jobs:
         run: npm ci
           
       - name: Run tests
+        id: test
         working-directory: apps/frontend
-        run: npm test -- --ci --coverage --maxWorkers=2
+        run: |
+          echo "## 🧪 테스트 실행" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 테스트 실행
+          if npm test -- --ci --coverage --maxWorkers=2 --json --outputFile=test-results.json > test-output.txt 2>&1; then
+            echo "### ✅ 모든 테스트 통과" >> $GITHUB_STEP_SUMMARY
+            echo "test_status=success" >> $GITHUB_OUTPUT
+            
+            # 테스트 결과 파싱
+            if [ -f test-results.json ]; then
+              TOTAL=$(jq '.numTotalTests' test-results.json)
+              PASSED=$(jq '.numPassedTests' test-results.json)
+              FAILED=$(jq '.numFailedTests' test-results.json)
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| 테스트 결과 | 개수 |" >> $GITHUB_STEP_SUMMARY
+              echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+              echo "| 총 테스트 | ${TOTAL} |" >> $GITHUB_STEP_SUMMARY
+              echo "| 성공 | ${PASSED} |" >> $GITHUB_STEP_SUMMARY
+              echo "| 실패 | ${FAILED} |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "### ❌ 테스트 실패" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -n 50 test-output.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "test_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+      - name: Coverage Report
+        if: success()
+        working-directory: apps/frontend
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 커버리지 리포트" >> $GITHUB_STEP_SUMMARY
+          if [ -f coverage/coverage-summary.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| 항목 | 커버리지 |" >> $GITHUB_STEP_SUMMARY
+            echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+            LINES=$(jq '.total.lines.pct' coverage/coverage-summary.json)
+            STATEMENTS=$(jq '.total.statements.pct' coverage/coverage-summary.json)
+            FUNCTIONS=$(jq '.total.functions.pct' coverage/coverage-summary.json)
+            BRANCHES=$(jq '.total.branches.pct' coverage/coverage-summary.json)
+            echo "| 라인 | ${LINES}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| 구문 | ${STATEMENTS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| 함수 | ${FUNCTIONS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| 분기 | ${BRANCHES}% |" >> $GITHUB_STEP_SUMMARY
+          fi
         
       - name: Upload coverage reports
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
@@ -117,8 +227,53 @@ jobs:
         run: npm ci
           
       - name: Build application
+        id: build
         working-directory: apps/frontend
-        run: npm run build
+        run: |
+          echo "## 🏭 빌드 검증" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 빌드 시작 시간 기록
+          BUILD_START=$(date +%s)
+          
+          # 빌드 실행
+          if npm run build > build-output.txt 2>&1; then
+            BUILD_END=$(date +%s)
+            BUILD_TIME=$((BUILD_END - BUILD_START))
+            
+            echo "### ✅ 빌드 성공" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+            echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+            echo "| 빌드 시간 | ${BUILD_TIME}초 |" >> $GITHUB_STEP_SUMMARY
+            echo "| 빌드 상태 | ✅ 성공 |" >> $GITHUB_STEP_SUMMARY
+            
+            # 빌드 결과 분석
+            if [ -d .next ]; then
+              BUILD_SIZE=$(du -sh .next | cut -f1)
+              echo "| 빌드 크기 | ${BUILD_SIZE} |" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "build_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "### ❌ 빌드 실패" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -n 50 build-output.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "build_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 빌드 요약" >> $GITHUB_STEP_SUMMARY
+          echo "| 단계 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 빌드 검증 | ${{ steps.build.outputs.build_status == 'success' && '✅ 통과' || '❌ 실패' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 시간 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
 
   # 보안 취약점 검사
   security-scan:
@@ -142,10 +297,53 @@ jobs:
         run: npm ci
           
       - name: Run npm audit
+        id: security
         working-directory: apps/frontend
         run: |
-          npm audit --omit=dev --audit-level=high || true
-          echo "::notice::Security audit completed. High severity vulnerabilities will fail the build."
+          echo "## 🔒 보안 취약점 검사" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # npm audit 실행
+          npm audit --omit=dev --json > audit-results.json || true
+          
+          # 취약점 분석
+          if [ -f audit-results.json ]; then
+            TOTAL=$(jq '.metadata.vulnerabilities.total' audit-results.json)
+            HIGH=$(jq '.metadata.vulnerabilities.high' audit-results.json)
+            CRITICAL=$(jq '.metadata.vulnerabilities.critical' audit-results.json)
+            MODERATE=$(jq '.metadata.vulnerabilities.moderate' audit-results.json)
+            LOW=$(jq '.metadata.vulnerabilities.low' audit-results.json)
+            
+            echo "### 📊 보안 취약점 현황" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| 심각도 | 개수 | 상태 |" >> $GITHUB_STEP_SUMMARY
+            echo "| --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+            echo "| 크리티컬 | ${CRITICAL} | $([ $CRITICAL -eq 0 ] && echo '✅' || echo '🔴') |" >> $GITHUB_STEP_SUMMARY
+            echo "| 높음 | ${HIGH} | $([ $HIGH -eq 0 ] && echo '✅' || echo '🟠') |" >> $GITHUB_STEP_SUMMARY
+            echo "| 중간 | ${MODERATE} | $([ $MODERATE -eq 0 ] && echo '✅' || echo '🟡') |" >> $GITHUB_STEP_SUMMARY
+            echo "| 낮음 | ${LOW} | $([ $LOW -eq 0 ] && echo '✅' || echo '🟢') |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**총 ${TOTAL}개의 취약점이 발견되었습니다.**" >> $GITHUB_STEP_SUMMARY
+            
+            # 크리티컬/높음 취약점이 있으면 실패
+            if [ $CRITICAL -gt 0 ] || [ $HIGH -gt 0 ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### ⚠️ 주의: 높은 심각도의 취약점이 발견되었습니다!" >> $GITHUB_STEP_SUMMARY
+              echo "security_status=failed" >> $GITHUB_OUTPUT
+              exit 1
+            else
+              echo "security_status=success" >> $GITHUB_OUTPUT
+            fi
+          fi
+          
+      - name: Security Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 보안 검사 | ${{ steps.security.outputs.security_status == 'success' && '✅ 통과' || '⚠️ 취약점 발견' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 실행 시간 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
           
   # Docker 이미지 빌드
   docker-build:
@@ -161,7 +359,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
+      - name: Docker Build Summary Start
+        run: |
+          echo "## 🐳 Docker 이미지 빌드" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 이미지 태그 | latest, ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 빌드 시작 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
+        
       - name: Build Docker image
+        id: docker-build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -172,6 +380,22 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/docker-image.tar
+          
+      - name: Docker Build Result
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.docker-build.outcome }}" == "success" ]; then
+            echo "### ✅ Docker 이미지 빌드 성공" >> $GITHUB_STEP_SUMMARY
+            # 이미지 크기 확인
+            if [ -f /tmp/docker-image.tar ]; then
+              IMAGE_SIZE=$(du -h /tmp/docker-image.tar | cut -f1)
+              echo "| 이미지 크기 | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "### ❌ Docker 이미지 빌드 실패" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| 빌드 종료 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
           
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
@@ -289,38 +513,78 @@ jobs:
           scp -i ~/.ssh/id_rsa .env.production.example ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ env.DEPLOY_DIR }}/
           
       - name: Deploy application
+        id: deploy
         run: |
+          echo "## 🚀 EC2 배포 시작" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 대상 서버 | ${{ secrets.EC2_HOST }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 배포 디렉토리 | ${{ env.DEPLOY_DIR }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 이미지 태그 | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 배포 시작 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          DEPLOY_START=$(date +%s)
+          
           ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << EOF
             cd ${{ env.DEPLOY_DIR }}
             
-            # ECR 로그인
+            echo "### 🔐 ECR 로그인"
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
             
             # 환경 변수 설정
             export ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY }}
             export IMAGE_TAG=${{ github.sha }}
             
-            # 기존 컨테이너 정지 및 제거
+            echo "### ⏹️ 기존 컨테이너 정지"
             docker compose -f docker-compose.prod.yml down || true
             
-            # 새 이미지 pull
-            docker pull ${ECR_REPOSITORY}:${IMAGE_TAG}
+            echo "### 📥 새 이미지 다운로드"
+            docker pull \${ECR_REPOSITORY}:\${IMAGE_TAG}
             
-            # 컨테이너 시작
+            echo "### ▶️ 새 컨테이너 시작"
             docker compose -f docker-compose.prod.yml up -d
             
             # 잠시 대기
             sleep 10
             
             # 헬스체크
-            if curl -f http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Deployment successful!"
-            else
-              echo "❌ Deployment failed - health check failed"
-              docker compose -f docker-compose.prod.yml logs
-              exit 1
-            fi
+            echo "### 🏥 헬스체크 수행"
+            RETRY_COUNT=0
+            MAX_RETRIES=30
+            
+            while [ \$RETRY_COUNT -lt \$MAX_RETRIES ]; do
+              if curl -f http://localhost:3000 > /dev/null 2>&1; then
+                echo "✅ 헬스체크 성공!"
+                exit 0
+              fi
+              RETRY_COUNT=\$((RETRY_COUNT + 1))
+              echo "재시도 \$RETRY_COUNT/\$MAX_RETRIES..."
+              sleep 2
+            done
+            
+            echo "❌ 헬스체크 실패"
+            docker compose -f docker-compose.prod.yml logs --tail=50
+            exit 1
           EOF
+          
+          DEPLOY_RESULT=$?
+          DEPLOY_END=$(date +%s)
+          DEPLOY_TIME=$((DEPLOY_END - DEPLOY_START))
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ $DEPLOY_RESULT -eq 0 ]; then
+            echo "### ✅ 배포 성공" >> $GITHUB_STEP_SUMMARY
+            echo "deploy_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "### ❌ 배포 실패" >> $GITHUB_STEP_SUMMARY
+            echo "deploy_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "| 배포 시간 | ${DEPLOY_TIME}초 |" >> $GITHUB_STEP_SUMMARY
+          echo "| 배포 종료 | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
           
       - name: Deployment summary
         run: |
