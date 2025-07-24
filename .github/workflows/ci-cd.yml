@@ -10,7 +10,6 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: 127994096408.dkr.ecr.ap-northeast-2.amazonaws.com/techwikiplus/client
   NODE_VERSION: '20'
 
 jobs:
@@ -162,8 +161,8 @@ jobs:
           context: .
           push: false
           tags: |
-            ${{ env.ECR_REPOSITORY }}:latest
-            ${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ secrets.ECR_REPOSITORY }}:latest
+            ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/docker-image.tar
@@ -189,10 +188,13 @@ jobs:
         
       - name: Check AWS credentials availability
         run: |
-          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
-            echo "❌ AWS credentials are not configured in GitHub Secrets."
-            echo "Please add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to your repository secrets."
-            echo "Go to: Settings > Secrets and variables > Actions > New repository secret"
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ] || [ -z "${{ secrets.ECR_REPOSITORY }}" ]; then
+            echo "❌ Required environment secrets are not configured."
+            echo "Please add the following secrets to your AWS environment:"
+            echo "- AWS_ACCESS_KEY_ID"
+            echo "- AWS_SECRET_ACCESS_KEY"
+            echo "- ECR_REPOSITORY (e.g., 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/your-repo)"
+            echo "Go to: Settings > Environments > AWS > Environment secrets"
             exit 1
           fi
           
@@ -218,8 +220,8 @@ jobs:
           
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ env.ECR_REPOSITORY }}:latest
-          docker push ${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker push ${{ secrets.ECR_REPOSITORY }}:latest
+          docker push ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
           
       - name: Create deployment summary
         run: |
@@ -228,7 +230,7 @@ jobs:
           echo "### 📦 Image Details" >> $GITHUB_STEP_SUMMARY
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Repository** | \`${{ env.ECR_REPOSITORY }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Repository** | \`${{ secrets.ECR_REPOSITORY }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Tags** | \`latest\`, \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
@@ -267,4 +269,4 @@ jobs:
           echo "## 🎯 Deployment Ready" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "The application is ready to be deployed with the following image:" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ env.ECR_REPOSITORY }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
