@@ -720,7 +720,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                     {!readOnly && (
                       <div className="pt-4 border-t">
                         <p className="text-xs text-muted-foreground">
-                          수정 제안을 작성한 후 '검수 완료하기' 버튼을 클릭하세요.
+                          수정 제안을 작성한 후 &apos;검수 완료하기&apos; 버튼을 클릭하세요.
                         </p>
                       </div>
                     )}
