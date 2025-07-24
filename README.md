@@ -46,6 +46,7 @@ TechWikiPlusApp은 AI가 생성한 고품질의 기술 문서를 커뮤니티가
 - Docker
 - Kubernetes
 - GitHub Actions
+- AWS ECR
 
 ## 시작하기
 
@@ -62,6 +63,34 @@ npm install
 # 개발 서버 실행
 npm run dev
 ```
+
+## CI/CD 파이프라인
+
+이 프로젝트는 GitHub Actions를 통해 자동화된 CI/CD 파이프라인을 제공합니다.
+
+### 파이프라인 동작
+
+- **트리거**: `main` 브랜치로의 push 또는 PR 머지 시
+- **단계**:
+  1. **Linter 실행**: ESLint를 통한 코드 품질 검사
+  2. **테스트 실행**: Jest를 통한 유닛 테스트 실행
+  3. **Docker 이미지 빌드**: 프로덕션용 이미지 생성
+  4. **AWS ECR 푸시**: 빌드된 이미지를 ECR 레지스트리에 업로드
+
+### 필요한 GitHub Environment Secrets
+
+이 파이프라인은 `AWS` Environment의 시크릿을 사용합니다. GitHub 저장소 설정의 Environment에서 다음 시크릿이 필요합니다:
+
+- `AWS_ACCESS_KEY_ID`: AWS 액세스 키 ID
+- `AWS_SECRET_ACCESS_KEY`: AWS 시크릿 액세스 키
+
+### Docker 이미지
+
+빌드된 이미지는 다음 태그로 푸시됩니다:
+- `latest`: 최신 버전
+- `{commit-sha}`: 특정 커밋 버전
+
+ECR 저장소: `127994096408.dkr.ecr.ap-northeast-2.amazonaws.com/techwikiplus/client`
 
 ## 기여하기
 
