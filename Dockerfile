@@ -8,8 +8,8 @@ WORKDIR /app
 # Copy frontend package files
 COPY apps/frontend/package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -24,7 +24,18 @@ COPY apps/frontend ./
 # Build the application
 RUN npm run build
 
-# Stage 3: Runner
+# Stage 3: Production Dependencies
+FROM node:20-alpine AS production-deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy package files
+COPY apps/frontend/package*.json ./
+
+# Install only production dependencies
+RUN npm ci --omit=dev
+
+# Stage 4: Runner
 FROM node:20-alpine AS runner
 WORKDIR /app
 
