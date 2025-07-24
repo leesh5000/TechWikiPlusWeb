@@ -51,13 +51,21 @@ jobs:
     name: Build and Push Docker Image
     needs: test-and-lint
     runs-on: ubuntu-latest
-    environment: AWS
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Check AWS credentials availability
+        run: |
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "❌ AWS credentials are not configured in GitHub Secrets."
+            echo "Please add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to your repository secrets."
+            echo "Go to: Settings > Secrets and variables > Actions > New repository secret"
+            exit 1
+          fi
+          
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -77,12 +77,18 @@ npm run dev
   3. **Docker 이미지 빌드**: 프로덕션용 이미지 생성
   4. **AWS ECR 푸시**: 빌드된 이미지를 ECR 레지스트리에 업로드
 
-### 필요한 GitHub Environment Secrets
+### 필요한 GitHub Secrets
 
-이 파이프라인은 `AWS` Environment의 시크릿을 사용합니다. GitHub 저장소 설정의 Environment에서 다음 시크릿이 필요합니다:
+이 파이프라인을 사용하려면 GitHub Repository Settings > Secrets and variables > Actions에서 다음 시크릿을 설정해야 합니다:
 
 - `AWS_ACCESS_KEY_ID`: AWS 액세스 키 ID
 - `AWS_SECRET_ACCESS_KEY`: AWS 시크릿 액세스 키
+
+**설정 방법:**
+1. GitHub 저장소로 이동
+2. Settings > Secrets and variables > Actions 선택
+3. "New repository secret" 클릭
+4. 위 시크릿들을 각각 추가
 
 ### Docker 이미지
 
