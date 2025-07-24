@@ -5,17 +5,18 @@ on:
     branches:
       - main
   pull_request:
-    types: [closed]
     branches:
       - main
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: 127994096408.dkr.ecr.ap-northeast-2.amazonaws.com/techwikiplus/client
+  NODE_VERSION: '20'
 
 jobs:
-  test-and-lint:
-    name: Run Tests and Linter
+  # 코드 품질 검사 - ESLint
+  lint:
+    name: ESLint Check
     runs-on: ubuntu-latest
     
     steps:
@@ -25,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: 'apps/frontend/package-lock.json'
           
@@ -33,10 +34,54 @@ jobs:
         working-directory: apps/frontend
         run: npm ci
           
-      - name: Run linter
+      - name: Run ESLint
         working-directory: apps/frontend
         run: npm run lint
+
+  # TypeScript 타입 체크
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
         
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'apps/frontend/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: apps/frontend
+        run: npm ci
+          
+      - name: Run TypeScript check
+        working-directory: apps/frontend
+        run: npx tsc --noEmit
+
+  # 단위 테스트
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'apps/frontend/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: apps/frontend
+        run: npm ci
+          
       - name: Run tests
         working-directory: apps/frontend
         run: npm test -- --ci --coverage --maxWorkers=2
@@ -46,12 +91,96 @@ jobs:
         with:
           name: coverage-reports
           path: apps/frontend/coverage
-          
-  build-and-push:
-    name: Build and Push Docker Image
-    needs: test-and-lint
+
+  # 빌드 가능 여부 확인
+  build-check:
+    name: Build Verification
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'apps/frontend/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: apps/frontend
+        run: npm ci
+          
+      - name: Build application
+        working-directory: apps/frontend
+        run: npm run build
+
+  # 보안 취약점 검사
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'apps/frontend/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: apps/frontend
+        run: npm ci
+          
+      - name: Run npm audit
+        working-directory: apps/frontend
+        run: |
+          npm audit --production
+          echo "::warning::Security vulnerabilities found. Please review npm audit results."
+          
+  # Docker 이미지 빌드
+  docker-build:
+    name: Build Docker Image
+    needs: [lint, typecheck, test, build-check]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: |
+            ${{ env.ECR_REPOSITORY }}:latest
+            ${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/docker-image.tar
+          
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/docker-image.tar
+          retention-days: 1
+
+  # ECR로 Docker 이미지 푸시
+  docker-push:
+    name: Push to ECR
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: AWS
     
     steps:
@@ -78,10 +207,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ env.ECR_REPOSITORY }}:latest .
-          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+          
+      - name: Load Docker image
+        run: docker load -i /tmp/docker-image.tar
           
       - name: Push Docker image to ECR
         run: |
@@ -90,12 +223,48 @@ jobs:
           
       - name: Create deployment summary
         run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Docker Image Push Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ env.ECR_REPOSITORY }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Image Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Repository** | \`${{ env.ECR_REPOSITORY }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tags** | \`latest\`, \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Pushed At** | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Deploy to ECS using the new image tag" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitor application health after deployment" >> $GITHUB_STEP_SUMMARY
+
+  # 배포 준비 (향후 ECS 배포 등 추가 가능)
+  deploy-prep:
+    name: Deployment Preparation
+    needs: docker-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: AWS
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Create deployment manifest
+        run: |
+          echo "Deployment manifest created for commit ${{ github.sha }}"
+          echo "Ready for ECS deployment"
+          
+      - name: Deployment readiness summary
+        run: |
+          echo "## 🎯 Deployment Ready" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The application is ready to be deployed with the following image:" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.ECR_REPOSITORY }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
