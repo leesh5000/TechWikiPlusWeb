@@ -29,9 +29,17 @@ WORKDIR /app
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./apps/frontend/node_modules
-COPY --from=deps /app/apps/frontend/package.json ./apps/frontend/
+# Copy workspace configuration
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY .npmrc* ./
+
+# Copy package files
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install ALL dependencies (for build)
+RUN pnpm install --frozen-lockfile --filter "./apps/frontend"
 
 # Copy source code
 COPY apps/frontend ./apps/frontend
