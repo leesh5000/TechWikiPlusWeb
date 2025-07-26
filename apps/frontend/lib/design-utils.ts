@@ -80,8 +80,8 @@ export const responsive = (
 // Animation class generator
 export const getAnimationClass = (
   animation: string,
-  duration: keyof typeof animation.duration = 'normal',
-  easing: keyof typeof animation.easing = 'easeInOut'
+  duration: 'fast' | 'normal' | 'slow' = 'normal',
+  easing: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' = 'easeInOut'
 ) => {
   return `${animation} duration-${duration} ${easing}`
 }

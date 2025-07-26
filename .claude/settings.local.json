@@ -15,7 +15,13 @@
       "Bash(git commit:*)",
       "Bash(npm test:*)",
       "Bash(touch:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git push:*)",
+      "Bash(gh workflow view:*)",
+      "Bash(gh run view:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(gh run list:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }
