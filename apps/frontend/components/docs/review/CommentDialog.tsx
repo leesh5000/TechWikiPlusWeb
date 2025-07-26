@@ -91,7 +91,7 @@ const CommentDialog = memo(function CommentDialog({
     >
       <div className="border-b p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">새 검수 의견</h3>
+          <h3 className="text-lg font-semibold">새 검수 의견</h3>
           <button
             onClick={onClose}
             className="rounded-md p-1 hover:bg-accent"
