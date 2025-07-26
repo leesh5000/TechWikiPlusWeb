@@ -181,6 +181,20 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
 
   // 드래그 이벤트 핸들러
   const handleMouseDown = (lineNumber: number) => {
+    // 이미 선택된 영역 내의 라인을 클릭하면 선택 해제
+    if (selectionStart !== null && selectionEnd !== null && !isSelecting) {
+      const start = Math.min(selectionStart, selectionEnd)
+      const end = Math.max(selectionStart, selectionEnd)
+      
+      if (lineNumber >= start && lineNumber <= end) {
+        setSelectionStart(null)
+        setSelectionEnd(null)
+        setActiveLineComment(null)
+        return
+      }
+    }
+    
+    // 새로운 선택 시작
     setIsSelecting(true)
     setSelectionStart(lineNumber)
     setSelectionEnd(lineNumber)
@@ -395,67 +409,59 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                         const suggestionComment = lineComments.find(c => c.suggestedChange)
                         const hasSuggestion = !!suggestionComment
                         
+                        // 멀티라인 선택의 첫 번째와 마지막 라인 확인
+                        const isFirstSelected = selectionStart !== null && lineNumber === Math.min(selectionStart, selectionEnd!)
+                        const isLastSelected = selectionEnd !== null && lineNumber === Math.max(selectionStart!, selectionEnd)
+                        const selectionLineCount = selectionStart !== null && selectionEnd !== null ? Math.abs(selectionEnd - selectionStart) + 1 : 0
+                        
                         return (
                           <div key={index} className="group relative">
                             <div 
                               data-line={lineNumber}
-                              className={`flex transition-colors duration-200 ${
-                                isSelected 
+                              className={`flex transition-colors duration-200 min-h-[2.5rem] ${
+                                isSelected && !hasSuggestion
                                   ? 'bg-primary/20 dark:bg-primary/30' 
                                   : hasSuggestion
-                                    ? 'bg-gray-50 dark:bg-gray-900/20 border-l-2 border-transparent'
+                                    ? 'bg-gray-50 dark:bg-gray-900/20 border-l-2 border-transparent cursor-not-allowed'
                                     : hasComments 
                                       ? 'bg-blue-50/50 dark:bg-blue-900/10 border-l-2 border-l-blue-200 dark:border-l-blue-800' 
                                       : 'hover:bg-muted/70'
                               } ${isSelecting ? 'select-none' : ''}`}
-                              onMouseDown={() => !readOnly && handleMouseDown(lineNumber)}
-                              onMouseMove={() => !readOnly && handleMouseMove(lineNumber)}
-                              style={{ cursor: !readOnly && isSelecting ? 'text' : 'default' }}
+                              onMouseDown={() => !readOnly && !hasSuggestion && handleMouseDown(lineNumber)}
+                              onMouseMove={() => !readOnly && !hasSuggestion && handleMouseMove(lineNumber)}
+                              style={{ cursor: !readOnly && !hasSuggestion && isSelecting ? 'text' : hasSuggestion ? 'not-allowed' : 'default' }}
                             >
-                              <div className={`w-14 shrink-0 select-none border-r px-3 py-2 text-xs font-medium text-center transition-colors ${
+                              <div className={`w-14 shrink-0 select-none border-r text-xs font-medium flex items-center justify-center transition-colors ${
                                 isSelected
                                   ? 'bg-primary/30 dark:bg-primary/40 text-primary dark:text-primary-foreground'
                                   : hasComments 
                                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
                                     : 'bg-muted/40 text-muted-foreground hover:bg-muted/60'
                               }`}>
-                                {lineNumber}
-                                {hasComments && !hasSuggestion && !isSelected && (
-                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mx-auto mt-0.5"></div>
-                                )}
+                                <div className="text-center">
+                                  {lineNumber}
+                                  {hasComments && !hasSuggestion && !isSelected && (
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mx-auto mt-0.5"></div>
+                                  )}
+                                </div>
                               </div>
-                              <div className={`flex-1 px-4 py-2 whitespace-pre-wrap ${
+                              <div className={`flex-1 px-4 py-2 whitespace-pre-wrap font-mono text-sm leading-6 ${
                                 hasSuggestion ? 'line-through text-gray-500 dark:text-gray-400' : ''
                               }`}>
                                 {line || '\u00A0'}
                               </div>
-                              {/* + 버튼: 단일 라인 또는 선택 영역의 마지막 라인에 표시 (수정 제안이 없는 경우만) */}
-                              {!readOnly && !isSelecting && activeLineComment !== lineNumber && !hasSuggestion && (
-                                (selectionStart === null && selectionEnd === null) || // 선택 영역이 없을 때 (단일 라인)
-                                (selectionStart !== null && selectionEnd !== null && lineNumber === Math.max(selectionStart, selectionEnd)) // 선택 영역의 마지막 라인
-                              ) && (
+                              {/* + 버튼: 단일 라인에만 표시 (호버 시) */}
+                              {!readOnly && !isSelecting && activeLineComment !== lineNumber && !hasSuggestion && 
+                                selectionStart === null && selectionEnd === null && (
                                 <button
-                                  onMouseDown={(e) => e.stopPropagation()} // mouseDown 이벤트 전파 차단
+                                  onMouseDown={(e) => e.stopPropagation()}
                                   onClick={(e) => {
-                                    e.stopPropagation() // 이벤트 버블링 중단
-                                    
-                                    // 타겟 라인 결정
-                                    const targetLine = selectionStart !== null 
-                                      ? Math.max(selectionStart, selectionEnd || selectionStart)
-                                      : lineNumber
-                                    
-                                    if (selectionStart === null) {
-                                      // 단일 라인 선택
-                                      setSelectionStart(lineNumber)
-                                      setSelectionEnd(lineNumber)
-                                    }
-                                    
-                                    // 의견 창 열기
-                                    setActiveLineComment(targetLine)
+                                    e.stopPropagation()
+                                    setSelectionStart(lineNumber)
+                                    setSelectionEnd(lineNumber)
+                                    setActiveLineComment(lineNumber)
                                   }}
-                                  className={`${
-                                    selectionStart !== null ? 'visible' : 'invisible group-hover:visible'
-                                  } absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all duration-200 hover:scale-105`}
+                                  className="invisible group-hover:visible absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all duration-200 hover:scale-105"
                                   title="의견 추가"
                                 >
                                   <Plus className="h-4 w-4 text-primary" />
@@ -463,18 +469,48 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                               )}
                             </div>
                             
+                            {/* 멀티 라인 선택 시 + 버튼 (첫 번째 라인에 배치) */}
+                            {!readOnly && !isSelecting && isFirstSelected && activeLineComment === null && (() => {
+                              const hasExistingComment = comments.some(comment => 
+                                (comment.lineStart >= Math.min(selectionStart!, selectionEnd!) && comment.lineStart <= Math.max(selectionStart!, selectionEnd!)) ||
+                                (comment.lineEnd >= Math.min(selectionStart!, selectionEnd!) && comment.lineEnd <= Math.max(selectionStart!, selectionEnd!)) ||
+                                (comment.lineStart <= Math.min(selectionStart!, selectionEnd!) && comment.lineEnd >= Math.max(selectionStart!, selectionEnd!))
+                              )
+                              
+                              if (!hasExistingComment) {
+                                return (
+                                  <button
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setActiveLineComment(Math.max(selectionStart!, selectionEnd!))
+                                    }}
+                                    className="absolute right-3 flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all duration-200 hover:scale-105 z-10"
+                                    style={{
+                                      top: '50%',
+                                      transform: `translateY(calc(-50% + ${(selectionLineCount - 1) * 1.25}rem))`
+                                    }}
+                                    title="의견 추가"
+                                  >
+                                    <Plus className="h-4 w-4 text-primary" />
+                                  </button>
+                                )
+                              }
+                              return null
+                            })()}
+                            
                             {/* 수정 제안이 있는 경우 초록색 라인으로 표시 - 마지막 라인 아래에 표시 */}
                             {hasSuggestion && suggestionComment && isLastLineOfComment && (
                               <div className="relative">
                                 <div 
-                                  className="flex bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors group"
+                                  className="flex bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors group min-h-[2.5rem] relative"
                                   onMouseEnter={() => handleShowTooltip(suggestionComment.id)}
                                   onMouseLeave={handleHideTooltip}
                                 >
-                                  <div className="w-14 shrink-0 select-none border-r px-3 py-2 text-xs font-medium text-center bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
+                                  <div className="w-14 shrink-0 select-none border-r text-xs font-medium flex items-center justify-center bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
                                     +
                                   </div>
-                                  <div className="flex-1 px-4 py-2 whitespace-pre-wrap text-green-700 dark:text-green-300 font-mono text-sm">
+                                  <div className="flex-1 px-4 py-2 whitespace-pre-wrap text-green-700 dark:text-green-300 font-mono text-sm leading-6">
                                     {suggestionComment.suggestedChange}
                                   </div>
                                   {!readOnly && (
@@ -483,7 +519,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                                         e.stopPropagation()
                                         handleDeleteComment(suggestionComment.id)
                                       }}
-                                      className="invisible group-hover:visible px-2 py-1 m-1 rounded-md bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900/70 text-red-600 dark:text-red-400 transition-all"
+                                      className="invisible group-hover:visible absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-md bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900/70 text-red-600 dark:text-red-400 transition-all"
                                       title="의견 삭제"
                                     >
                                       <X className="h-4 w-4" />
