@@ -99,4 +99,4 @@ ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["node", "apps/frontend/server.js"]
