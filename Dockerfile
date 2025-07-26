@@ -9,8 +9,10 @@ WORKDIR /app
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
-# Copy pnpm lockfile
+# Copy workspace configuration
 COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
 COPY .npmrc* ./
 
 # Copy frontend package files
@@ -47,8 +49,10 @@ WORKDIR /app
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
-# Copy pnpm lockfile
+# Copy workspace configuration
 COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
 COPY .npmrc* ./
 
 # Copy package files

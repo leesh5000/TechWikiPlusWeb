@@ -66,3 +66,11 @@ docs
 # Temporary files
 tmp
 temp
+
+# Claude
+.claude
+
+# Docker
+Dockerfile
+docker-compose*
+.dockerignore
