@@ -69,6 +69,52 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // Design token animations
+        "fade-in": "fadeIn 300ms ease-out",
+        "fade-out": "fadeOut 300ms ease-in",
+        "slide-in": "slideIn 300ms ease-out",
+        "slide-out": "slideOut 300ms ease-in",
+        "scale-in": "scaleIn 200ms ease-out",
+        "scale-out": "scaleOut 200ms ease-in",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        fadeOut: {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
+        slideIn: {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        slideOut: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+        scaleIn: {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        scaleOut: {
+          "0%": { transform: "scale(1)", opacity: "1" },
+          "100%": { transform: "scale(0.9)", opacity: "0" },
+        },
+      },
+      transitionDuration: {
+        0: "0ms",
+        150: "150ms",
+        300: "300ms",
+        500: "500ms",
+        700: "700ms",
+      },
+      transitionTimingFunction: {
+        "ease-in": "cubic-bezier(0.4, 0, 1, 1)",
+        "ease-out": "cubic-bezier(0, 0, 0.2, 1)",
+        "ease-in-out": "cubic-bezier(0.4, 0, 0.2, 1)",
+        bounce: "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
       },
     },
   },
