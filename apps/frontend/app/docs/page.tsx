@@ -211,7 +211,7 @@ export default function DocsPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {/* Hero Section */}
         <section className="border-b bg-muted/30 dark:bg-muted/20 py-12 md:py-16">
           <div className="container">
@@ -225,13 +225,18 @@ export default function DocsPage() {
               
               {/* Search Bar */}
               <div className="relative mx-auto max-w-xl">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <label htmlFor="docs-search" className="sr-only">
+                  문서 검색
+                </label>
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <input
+                  id="docs-search"
                   type="text"
                   placeholder="문서 제목이나 내용으로 검색..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-12 w-full rounded-lg border border-input bg-background dark:bg-card pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-primary/50"
+                  aria-label="문서 제목이나 내용으로 검색"
                 />
               </div>
             </div>

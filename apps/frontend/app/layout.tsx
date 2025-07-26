@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
+import { ToastProvider } from '@/lib/toast-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -33,8 +34,13 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={inter.className}>
+        <a href="#main-content" className="skip-to-content">
+          메인 콘텐츠로 이동
+        </a>
         <AuthProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

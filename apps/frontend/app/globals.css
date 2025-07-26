@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -63,6 +75,30 @@
   /* 부드러운 테마 전환 */
   * {
     transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  /* 접근성 개선: 포커스 스타일 */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  
+  /* 버튼 및 인터랙티브 요소 최소 크기 보장 */
+  button, a, [role="button"], [tabindex="0"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* 작은 버튼들을 위한 예외 클래스 */
+  .small-touch-target {
+    @apply min-h-[32px] min-w-[32px];
+  }
+  
+  /* 키보드 네비게이션 개선 */
+  .skip-to-content {
+    @apply absolute left-[-9999px] top-2 z-50 rounded bg-primary px-4 py-2 text-primary-foreground;
+  }
+  
+  .skip-to-content:focus {
+    @apply left-2;
   }
 }
 
