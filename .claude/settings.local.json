@@ -22,7 +22,8 @@
       "Bash(pnpm approve-builds:*)",
       "Bash(gh run list:*)",
       "Bash(npx tsc:*)",
-      "Bash(docker build:*)"
+      "Bash(docker build:*)",
+      "Bash(docker run:*)"
     ],
     "deny": []
   }

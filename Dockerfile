@@ -81,13 +81,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
-COPY --from=builder /app/apps/frontend/public ./public
-COPY --from=builder /app/apps/frontend/package.json ./package.json
-
-# Copy Next.js build output
+# Copy Next.js standalone build (which includes server.js and node_modules)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./.next/static
+
+# Copy static files and public folder
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static  
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/public ./apps/frontend/public
 
 # Switch to non-root user
 USER nextjs
@@ -95,8 +94,9 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
-# Set hostname
+# Set hostname and port
 ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
 
 # Start the application
 CMD ["node", "server.js"]
