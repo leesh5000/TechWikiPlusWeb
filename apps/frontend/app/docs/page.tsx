@@ -4,15 +4,14 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import Dropdown from '@/components/ui/Dropdown'
+import SearchAutocomplete, { SearchSuggestion } from '@/components/ui/SearchAutocomplete'
+import SearchHighlight from '@/components/ui/SearchHighlight'
+import AdvancedFilters, { FilterState } from '@/components/ui/AdvancedFilters'
 import { 
-  Search, 
-  Filter, 
   Clock, 
   Eye, 
   CheckCircle, 
   AlertCircle,
-  ChevronDown,
   Timer
 } from 'lucide-react'
 
@@ -147,11 +146,6 @@ const mockDocs = [
 ]
 
 const categories = ["전체", "React", "TypeScript", "DevOps", "Next.js", "Python", "API", "Vue", "AWS", "Database"]
-const sortOptions = [
-  { value: "latest", label: "최신순" },
-  { value: "popular", label: "인기순" },
-  { value: "views", label: "조회수순" }
-]
 
 const categoryColors: Record<string, string> = {
   React: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
@@ -168,9 +162,13 @@ const categoryColors: Record<string, string> = {
 export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('전체')
-  const [verificationFilter, setVerificationFilter] = useState('전체') // 전체, 검증됨, 검증 중, 미검증
-  const [sortBy, setSortBy] = useState('latest')
-  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState<FilterState>({
+    categories: [],
+    verificationStatus: [],
+    dateRange: 'all',
+    minViews: 0,
+    sortBy: 'latest'
+  })
 
   // 필터링 및 정렬된 문서 목록
   const filteredDocs = useMemo(() => {
@@ -179,25 +177,54 @@ export default function DocsPage() {
       const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           doc.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
       
-      // 카테고리 필터  
-      const matchesCategory = selectedCategory === '전체' || doc.category === selectedCategory
+      // 카테고리 필터 (기본 + 고급)
+      const matchesCategory = 
+        (selectedCategory === '전체' || doc.category === selectedCategory) &&
+        (filters.categories.length === 0 || filters.categories.includes(doc.category))
       
       // 검증 상태 필터
-      const matchesVerification = verificationFilter === '전체' ||
-                                (verificationFilter === '검증됨' && doc.verificationStatus === 'verified') ||
-                                (verificationFilter === '검증 중' && doc.verificationStatus === 'verifying') ||
-                                (verificationFilter === '미검증' && doc.verificationStatus === 'unverified')
+      const matchesVerification = 
+        filters.verificationStatus.length === 0 || 
+        filters.verificationStatus.includes(doc.verificationStatus)
       
-      return matchesSearch && matchesCategory && matchesVerification
+      // 조회수 필터
+      const matchesViews = doc.viewCount >= filters.minViews
+      
+      // 날짜 필터
+      let matchesDate = true
+      if (filters.dateRange !== 'all') {
+        const docDate = new Date(doc.createdAt)
+        const now = new Date()
+        
+        switch (filters.dateRange) {
+          case 'today':
+            matchesDate = docDate.toDateString() === now.toDateString()
+            break
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            matchesDate = docDate >= weekAgo
+            break
+          case 'month':
+            const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+            matchesDate = docDate >= monthAgo
+            break
+          case 'year':
+            const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+            matchesDate = docDate >= yearAgo
+            break
+        }
+      }
+      
+      return matchesSearch && matchesCategory && matchesVerification && matchesViews && matchesDate
     })
 
     // 정렬
     filtered.sort((a, b) => {
-      switch (sortBy) {
+      switch (filters.sortBy) {
         case 'latest':
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         case 'popular':
-          return b.viewCount - a.viewCount
+          return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes)
         case 'views':
           return b.viewCount - a.viewCount
         default:
@@ -206,7 +233,27 @@ export default function DocsPage() {
     })
 
     return filtered
-  }, [searchQuery, selectedCategory, verificationFilter, sortBy])
+  }, [searchQuery, selectedCategory, filters])
+
+  // 검색 제안사항 핸들러
+  const handleSearchSuggestion = (suggestion: SearchSuggestion) => {
+    if (suggestion.type === 'category' && suggestion.category) {
+      setSelectedCategory(suggestion.category)
+    }
+  }
+
+  // 필터 초기화
+  const resetFilters = () => {
+    setSearchQuery('')
+    setSelectedCategory('전체')
+    setFilters({
+      categories: [],
+      verificationStatus: [],
+      dateRange: 'all',
+      minViews: 0,
+      sortBy: 'latest'
+    })
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -224,85 +271,46 @@ export default function DocsPage() {
               </p>
               
               {/* Search Bar */}
-              <div className="relative mx-auto max-w-xl">
-                <label htmlFor="docs-search" className="sr-only">
-                  문서 검색
-                </label>
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                <input
-                  id="docs-search"
-                  type="text"
-                  placeholder="문서 제목이나 내용으로 검색..."
+              <div className="mx-auto max-w-xl">
+                <SearchAutocomplete
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-12 w-full rounded-lg border border-input bg-background dark:bg-card pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-primary/50"
-                  aria-label="문서 제목이나 내용으로 검색"
+                  onChange={setSearchQuery}
+                  onSelect={handleSearchSuggestion}
+                  placeholder="문서 제목이나 내용으로 검색..."
                 />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Filters */}
+        {/* Quick Category Filters */}
         <section className="border-b py-6">
           <div className="container">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              {/* Category Filters */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted dark:bg-muted/30 text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/40'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-
-              {/* Filter Toggle & Sort */}
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap gap-2 justify-center">
+              {categories.map((category) => (
                 <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm font-medium hover:bg-accent dark:hover:bg-accent"
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted dark:bg-muted/30 text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/40'
+                  }`}
                 >
-                  <Filter className="h-4 w-4" />
-                  필터
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  {category}
                 </button>
-
-                <Dropdown
-                  value={sortBy}
-                  onChange={setSortBy}
-                  options={sortOptions}
-                />
-              </div>
+              ))}
             </div>
-
-            {/* Extended Filters */}
-            {showFilters && (
-              <div className="mt-4 flex flex-wrap gap-4 border-t dark:border-border/70 pt-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">검증 상태:</span>
-                  <Dropdown
-                    value={verificationFilter}
-                    onChange={setVerificationFilter}
-                    options={[
-                      { value: '전체', label: '전체' },
-                      { value: '검증됨', label: '검증됨' },
-                      { value: '검증 중', label: '검증 중' },
-                      { value: '미검증', label: '미검증' }
-                    ]}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </section>
+
+        {/* Advanced Filters */}
+        <AdvancedFilters
+          filters={filters}
+          onChange={setFilters}
+          onReset={resetFilters}
+          categories={categories.filter(cat => cat !== '전체')}
+        />
 
         {/* Results */}
         <section className="py-8">
@@ -354,11 +362,17 @@ export default function DocsPage() {
                         href={`/docs/${doc.id}`}
                         className="hover:text-primary"
                       >
-                        {doc.title}
+                        <SearchHighlight 
+                          text={doc.title} 
+                          searchQuery={searchQuery}
+                        />
                       </Link>
                     </h3>
                     <p className="mb-4 line-clamp-3 text-sm text-muted-foreground">
-                      {doc.excerpt}
+                      <SearchHighlight 
+                        text={doc.excerpt} 
+                        searchQuery={searchQuery}
+                      />
                     </p>
 
                     {/* Meta Info */}
@@ -392,14 +406,10 @@ export default function DocsPage() {
               <div className="py-12 text-center">
                 <p className="text-muted-foreground">검색 조건에 맞는 문서를 찾을 수 없습니다.</p>
                 <button
-                  onClick={() => {
-                    setSearchQuery('')
-                    setSelectedCategory('전체')
-                    setVerificationFilter('전체')
-                  }}
+                  onClick={resetFilters}
                   className="mt-4 text-sm text-primary hover:underline"
                 >
-                  필터 초기화
+                  모든 필터 초기화
                 </button>
               </div>
             )}
