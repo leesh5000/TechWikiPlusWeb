@@ -5,35 +5,57 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install pnpm
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+# Copy pnpm lockfile
+COPY pnpm-lock.yaml ./
+COPY .npmrc* ./
+
 # Copy frontend package files
-COPY apps/frontend/package*.json ./
+COPY apps/frontend/package.json ./apps/frontend/
 
 # Install ALL dependencies (including devDependencies for build)
-RUN npm ci
+RUN pnpm install --frozen-lockfile --filter "./apps/frontend"
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Install pnpm
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
 # Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./apps/frontend/node_modules
+COPY --from=deps /app/apps/frontend/package.json ./apps/frontend/
 
 # Copy source code
-COPY apps/frontend ./
+COPY apps/frontend ./apps/frontend
 
 # Build the application
-RUN npm run build
+WORKDIR /app/apps/frontend
+RUN pnpm run build
 
 # Stage 3: Production Dependencies
 FROM node:20-alpine AS production-deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install pnpm
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+# Copy pnpm lockfile
+COPY pnpm-lock.yaml ./
+COPY .npmrc* ./
+
 # Copy package files
-COPY apps/frontend/package*.json ./
+COPY apps/frontend/package.json ./apps/frontend/
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN pnpm install --frozen-lockfile --filter "./apps/frontend" --prod
 
 # Stage 4: Runner
 FROM node:20-alpine AS runner
@@ -48,12 +70,12 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/apps/frontend/public ./public
+COPY --from=builder /app/apps/frontend/package.json ./package.json
 
 # Copy Next.js build output
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./.next/static
 
 # Switch to non-root user
 USER nextjs
