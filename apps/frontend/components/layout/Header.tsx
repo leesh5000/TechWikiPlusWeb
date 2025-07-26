@@ -111,7 +111,7 @@ const Header = memo(function Header() {
               id="header-search"
               type="search"
               placeholder="검색..."
-              className="h-10 sm:h-11 w-full rounded-md border border-border/80 bg-gray-50 dark:bg-card pl-9 sm:pl-10 pr-3 text-sm shadow-sm placeholder:text-foreground/50 hover:border-primary/50 focus:border-primary focus:border-2 focus:outline-none transition-all"
+              className="h-10 sm:h-11 w-full rounded-md border border-input bg-background dark:bg-card pl-9 sm:pl-10 pr-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
               aria-label="기술 문서 검색"
             />
           </div>

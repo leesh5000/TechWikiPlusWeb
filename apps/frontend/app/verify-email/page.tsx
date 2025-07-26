@@ -149,7 +149,7 @@ function VerifyEmailContent() {
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={index === 0 ? handlePaste : undefined}
                 disabled={isLoading}
-                className="h-12 w-12 rounded-md border border-input bg-background text-center text-lg font-medium focus:border-primary focus:border-2 focus:outline-none disabled:opacity-50 transition-colors"
+                className="h-12 w-12 rounded-md border border-input bg-background text-center text-lg font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                 autoFocus={index === 0}
               />
             ))}
