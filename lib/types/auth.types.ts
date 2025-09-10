@@ -2,7 +2,7 @@ export interface User {
   id: string
   email: string
   nickname: string
-  role: 'USER' | 'ADMIN'
+  role: 'USER' | 'CONTRIBUTOR' | 'ADMIN'
   status: 'PENDING' | 'ACTIVE' | 'BANNED' | 'DORMANT' | 'DELETED'
   points?: number
   createdAt?: string
