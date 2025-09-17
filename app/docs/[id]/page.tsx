@@ -7,6 +7,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import CodeBlock from '@/components/markdown/CodeBlock'
 import DocumentActions from '@/components/docs/DocumentActions'
+import { postsService } from '@/lib/api/posts.service'
+import { Document } from '@/lib/types/post.types'
 import { 
   ArrowLeft, 
   Clock, 
@@ -20,27 +22,24 @@ import {
   Share2
 } from 'lucide-react'
 
-// 문서 검증 상태 타입
-type VerificationStatus = 'unverified' | 'verifying' | 'verified'
+// Fallback content for demo purposes
+const fallbackContent = `
+# 문서를 불러오는 중 오류가 발생했습니다
 
-interface Document {
-  id: number
-  title: string
-  category: string
-  createdAt: string
-  updatedAt: string
-  viewCount: number
-  verificationStatus: VerificationStatus
-  author: string
-  verifiedBy: string | null
-  excerpt: string
-  content: string
-  upvotes: number
-  downvotes: number
-  readingTime: number
-  verificationStartedAt?: string
-  verificationEndAt?: string
-}
+이 문서는 현재 사용할 수 없습니다. 잠시 후 다시 시도해주세요.
+
+## 가능한 원인
+
+1. **서버 연결 문제**: API 서버에 연결할 수 없습니다
+2. **문서 ID 오류**: 요청한 문서를 찾을 수 없습니다
+3. **권한 문제**: 이 문서에 접근할 권한이 없을 수 있습니다
+
+## 해결 방법
+
+- 페이지를 새로고침 해보세요
+- 인터넷 연결 상태를 확인해보세요
+- 문서 목록으로 돌아가서 다시 시도해보세요
+`
 
 // Mock data - 실제로는 API에서 가져옴
 const mockDocs: Document[] = [
@@ -263,14 +262,74 @@ interface DocPageProps {
   }>
 }
 
+// Fetch related documents
+async function fetchRelatedDocuments(category: string, currentId: string | number): Promise<Document[]> {
+  try {
+    const response = await postsService.getDocuments({ limit: 10 })
+    return response.documents
+      .filter(d => String(d.id) !== String(currentId) && d.category === category)
+      .slice(0, 2)
+  } catch (error) {
+    console.error('Failed to fetch related documents:', error)
+    return []
+  }
+}
+
 export default async function DocPage({ params }: DocPageProps) {
   const { id } = await params
-  const parsedId = parseInt(id)
-  const doc = mockDocs.find(d => d.id === parsedId)
+  
+  let doc: Document | null = null
+  let relatedDocs: Document[] = []
+  
+  try {
+    // Fetch the document from API
+    doc = await postsService.getDocument(id)
+    
+    // Fetch related documents
+    if (doc) {
+      relatedDocs = await fetchRelatedDocuments(doc.category, doc.id)
+    }
+  } catch (error) {
+    // Don't log 404 errors, as we'll fallback to mock data
+    if (error instanceof Error && !error.message.includes('not found')) {
+      console.error('Failed to fetch document:', error)
+    }
+    
+    // Try to use mock data as fallback
+    const parsedId = parseInt(id)
+    const mockDoc = mockDocs.find(d => d.id === parsedId)
+    
+    if (mockDoc) {
+      doc = {
+        ...mockDoc,
+        id: String(mockDoc.id),
+        updatedAt: mockDoc.updatedAt,
+        content: mockDoc.content,
+        author: mockDoc.author,
+        verifiedBy: mockDoc.verifiedBy,
+        readingTime: mockDoc.readingTime
+      }
+      relatedDocs = mockDocs
+        .filter(d => d.id !== mockDoc.id && d.category === mockDoc.category)
+        .slice(0, 2)
+        .map(d => ({
+          ...d,
+          id: String(d.id),
+          updatedAt: d.updatedAt,
+          content: d.content,
+          author: d.author,
+          verifiedBy: d.verifiedBy,
+          readingTime: d.readingTime
+        }))
+    }
+  }
   
   if (!doc) {
     notFound()
   }
+  
+  // Use fallback content if no content available
+  const displayContent = doc.content || fallbackContent
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -310,7 +369,7 @@ export default async function DocPage({ params }: DocPageProps) {
                 ) : doc.verificationStatus === 'verifying' ? (
                   <span className="flex items-center text-sm text-blue-600 dark:text-blue-400">
                     <Timer className="mr-1 h-4 w-4" />
-                    검증 중
+                    검수 중
                   </span>
                 ) : (
                   <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
@@ -459,7 +518,7 @@ export default async function DocPage({ params }: DocPageProps) {
                     )
                   }}
                 >
-                  {doc.content}
+                  {displayContent}
                 </ReactMarkdown>
               </div>
             </div>
@@ -473,10 +532,7 @@ export default async function DocPage({ params }: DocPageProps) {
             <div className="mx-auto max-w-4xl">
               <h3 className="mb-6 text-xl font-semibold">관련 문서</h3>
               <div className="grid gap-4 sm:grid-cols-2">
-                {mockDocs
-                  .filter(d => d.id !== doc.id && d.category === doc.category)
-                  .slice(0, 2)
-                  .map(relatedDoc => (
+                {relatedDocs.map(relatedDoc => (
                     <Link
                       key={relatedDoc.id}
                       href={`/docs/${relatedDoc.id}`}

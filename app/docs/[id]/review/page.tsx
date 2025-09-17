@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import ReviewPageContent from './ReviewPageContent'
+import { postsService } from '@/lib/api/posts.service'
 
 // 문서 검증 상태 타입
 type VerificationStatus = 'unverified' | 'verifying' | 'verified'
@@ -28,7 +29,41 @@ interface ReviewPageProps {
   }>
 }
 
-// Mock data - 실제로는 API에서 가져옴
+// Fetch document from API
+async function getDocument(id: string): Promise<Document | null> {
+  try {
+    const post = await postsService.getPost(id)
+    
+    // Transform post to Document format
+    const doc: Document = {
+      id: parseInt(id),
+      title: post.title,
+      category: post.tags?.[0]?.name || 'General',
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt || post.modifiedAt || post.createdAt,
+      viewCount: post.views || 0,
+      verificationStatus: post.verificationStatus || 'unverified',
+      author: post.author?.username || 'Unknown',
+      verifiedBy: post.verifiedBy || null,
+      excerpt: post.summary || '',
+      content: post.body || '',
+      upvotes: post.upvotes || 0,
+      downvotes: post.downvotes || 0,
+      readingTime: Math.ceil((post.body?.length || 0) / 200),
+      verificationDeadline: post.verificationEndAt
+    }
+    
+    return doc
+  } catch (error) {
+    // Don't log 404 errors, as we'll fallback to mock data
+    if (error instanceof Error && !error.message.includes('not found')) {
+      console.error('Failed to fetch document:', error)
+    }
+    return null
+  }
+}
+
+// Keep mock data as fallback for development
 const mockDocs: Document[] = [
   {
     id: 1,
@@ -193,8 +228,15 @@ React Native 앱 성능 최적화는 지속적인 과정입니다. 프로파일�
 
 export default async function ReviewPage({ params }: ReviewPageProps) {
   const { id } = await params
-  const parsedId = parseInt(id)
-  const doc = mockDocs.find(d => d.id === parsedId)
+  
+  // Try to fetch from API first
+  let doc = await getDocument(id)
+  
+  // Fallback to mock data in development
+  if (!doc && process.env.NODE_ENV === 'development') {
+    const parsedId = parseInt(id)
+    doc = mockDocs.find(d => d.id === parsedId) || null
+  }
   
   if (!doc) {
     notFound()

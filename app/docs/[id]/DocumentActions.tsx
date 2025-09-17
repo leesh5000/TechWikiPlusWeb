@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { ThumbsUp, ThumbsDown, Share2, Shield, Timer } from 'lucide-react'
+import Link from 'next/link'
+import { ThumbsUp, ThumbsDown, Share2, Shield, Timer, Loader2, Edit } from 'lucide-react'
+import { reviewService } from '@/lib/api/review.service'
 
 // 문서 검증 상태 타입
 type VerificationStatus = 'unverified' | 'verifying' | 'verified'
@@ -32,20 +34,35 @@ interface DocumentActionsProps {
 export default function DocumentActions({ doc: initialDoc }: DocumentActionsProps) {
   const [doc, setDoc] = useState<Document>(initialDoc)
   const [hasVoted, setHasVoted] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleStartVerification = () => {
+  const handleStartVerification = async () => {
     if (doc.verificationStatus === 'unverified') {
-      const now = new Date()
-      const endDate = new Date(now.getTime() + 72 * 60 * 60 * 1000) // 72시간 후
+      setIsLoading(true)
+      setError(null)
       
-      setDoc({
-        ...doc,
-        verificationStatus: 'verifying',
-        verificationStartedAt: now.toISOString(),
-        verificationEndAt: endDate.toISOString(),
-        upvotes: 0,
-        downvotes: 0
-      })
+      try {
+        // Call API to start review
+        const response = await reviewService.startReview(doc.id.toString())
+        
+        // Update local state with response data
+        setDoc({
+          ...doc,
+          verificationStatus: 'verifying',
+          verificationStartedAt: response.verificationStartedAt,
+          verificationEndAt: response.verificationEndAt,
+          upvotes: 0,
+          downvotes: 0
+        })
+      } catch (err) {
+        // Handle error
+        const errorMessage = err instanceof Error ? err.message : '검수 시작에 실패했습니다'
+        setError(errorMessage)
+        console.error('Failed to start review:', err)
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -86,31 +103,50 @@ export default function DocumentActions({ doc: initialDoc }: DocumentActionsProp
           {doc.verificationStatus === 'unverified' && (
             <button 
               onClick={handleStartVerification}
-              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Shield className="h-4 w-4" />
-              문서 검증하기
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  검수 시작 중...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4" />
+                  문서 검수하기
+                </>
+              )}
             </button>
           )}
           {doc.verificationStatus === 'verifying' && (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={handleUpvote}
-                disabled={hasVoted}
-                className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+            <>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleUpvote}
+                  disabled={hasVoted}
+                  className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                  {doc.upvotes}
+                </button>
+                <button 
+                  onClick={handleDownvote}
+                  disabled={hasVoted}
+                  className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                  {doc.downvotes}
+                </button>
+              </div>
+              <Link
+                href={`/docs/${doc.id}/review`}
+                className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
-                <ThumbsUp className="h-4 w-4" />
-                {doc.upvotes}
-              </button>
-              <button 
-                onClick={handleDownvote}
-                disabled={hasVoted}
-                className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ThumbsDown className="h-4 w-4" />
-                {doc.downvotes}
-              </button>
-            </div>
+                <Edit className="h-4 w-4" />
+                문서 수정본 작성
+              </Link>
+            </>
           )}
           {doc.verificationStatus === 'verified' && (
             <div className="flex items-center gap-2">
@@ -133,7 +169,7 @@ export default function DocumentActions({ doc: initialDoc }: DocumentActionsProp
           </button>
         </div>
         
-        {/* 검증 중일 때 진행 상황 표시 */}
+        {/* 검수 중일 때 진행 상황 표시 */}
         {doc.verificationStatus === 'verifying' && doc.verificationEndAt && (
           <div className="text-sm text-muted-foreground">
             <span>검증 마감: </span>
@@ -164,6 +200,13 @@ export default function DocumentActions({ doc: initialDoc }: DocumentActionsProp
           </div>
         </div>
       </div>
+      
+      {/* Error message display */}
+      {error && (
+        <div className="mt-4 rounded-md border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30 p-3">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
     </>
   )
 }

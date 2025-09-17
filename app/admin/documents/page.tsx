@@ -10,7 +10,7 @@ import Dropdown from '@/components/ui/Dropdown'
 const statusOptions = [
   { value: 'all', label: '전체 상태' },
   { value: 'verified', label: '검증됨' },
-  { value: 'verifying', label: '검증 중' },
+  { value: 'verifying', label: '검수 중' },
   { value: 'unverified', label: '미검증' }
 ]
 
@@ -71,7 +71,7 @@ export default function AdminDocumentsPage() {
            value === 'verifying' ? <Timer className="h-4 w-4" /> :
            <AlertCircle className="h-4 w-4" />}
           {value === 'verified' ? '검증됨' :
-           value === 'verifying' ? '검증 중' : '미검증'}
+           value === 'verifying' ? '검수 중' : '미검증'}
         </span>
       ),
       className: 'w-32'
@@ -181,7 +181,7 @@ export default function AdminDocumentsPage() {
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm font-medium text-muted-foreground">검증 중</p>
+          <p className="text-sm font-medium text-muted-foreground">검수 중</p>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {mockDocs.filter(d => d.verificationStatus === 'verifying').length}
           </p>

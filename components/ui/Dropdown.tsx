@@ -21,7 +21,7 @@ export default function Dropdown({ value, options, onChange, className = '' }: D
 
   // 선택된 옵션의 라벨 찾기
   const selectedOption = options.find(opt => opt.value === value)
-  const selectedLabel = selectedOption ? selectedOption.label : options[0]?.label || ''
+  const selectedLabel = selectedOption ? selectedOption.label : '선택하세요'
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -47,9 +47,11 @@ export default function Dropdown({ value, options, onChange, className = '' }: D
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 rounded-md border border-input dark:border-input/70 bg-background dark:bg-card px-3 py-2 text-sm text-foreground hover:bg-accent dark:hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-primary/50 transition-colors"
+        className="flex items-center justify-between gap-2 rounded-md border border-input dark:border-input/70 bg-background dark:bg-card px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-primary/50 transition-colors"
       >
-        <span>{selectedLabel}</span>
+        <span className={selectedOption ? 'text-foreground' : 'text-muted-foreground'}>
+          {selectedLabel}
+        </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 

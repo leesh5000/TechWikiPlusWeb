@@ -114,8 +114,17 @@ class ApiClient {
   }
 
   private async refreshToken(refreshToken: string) {
-    // This endpoint should be implemented in the backend
-    return this.client.post('/api/v1/auth/refresh', { refreshToken })
+    // Get userId from cookies or localStorage
+    const userId = this.getUserId()
+    if (!userId) {
+      throw new Error('User ID not found')
+    }
+    
+    // Call the correct refresh endpoint with userId
+    return this.client.post('/api/v1/users/login/refresh', { 
+      userId,
+      refreshToken 
+    })
   }
 
   // Token management methods
@@ -125,6 +134,18 @@ class ApiClient {
 
   getRefreshToken(): string | undefined {
     return Cookies.get('refreshToken')
+  }
+
+  getUserId(): string | undefined {
+    return Cookies.get('userId') || localStorage.getItem('userId') || undefined
+  }
+
+  setUserId(userId: string) {
+    Cookies.set('userId', userId, { 
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    })
+    localStorage.setItem('userId', userId)
   }
 
   setAccessToken(token: string, expiresAt?: string) {
@@ -148,6 +169,8 @@ class ApiClient {
   clearTokens() {
     Cookies.remove('accessToken')
     Cookies.remove('refreshToken')
+    Cookies.remove('userId')
+    localStorage.removeItem('userId')
   }
 
   // Public API methods

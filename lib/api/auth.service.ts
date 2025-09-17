@@ -29,9 +29,16 @@ class AuthService {
       const response = await apiClient.post<LoginResponse>('/api/v1/users/login', data)
       const loginData = response.data
 
-      // Store tokens
+      // Store tokens and userId
       apiClient.setAccessToken(loginData.accessToken, loginData.accessTokenExpiresAt)
       apiClient.setRefreshToken(loginData.refreshToken, loginData.refreshTokenExpiresAt)
+      
+      // Store userId if available in response
+      if (loginData.userId) {
+        apiClient.setUserId(loginData.userId)
+      } else if (loginData.user?.id) {
+        apiClient.setUserId(loginData.user.id)
+      }
 
       return loginData
     } catch (error) {
@@ -64,12 +71,15 @@ class AuthService {
    */
   async refreshAccessToken(): Promise<LoginResponse> {
     const refreshToken = apiClient.getRefreshToken()
-    if (!refreshToken) {
-      throw new Error('No refresh token available')
+    const userId = apiClient.getUserId()
+    
+    if (!refreshToken || !userId) {
+      throw new Error('No refresh token or user ID available')
     }
 
     try {
-      const response = await apiClient.post<LoginResponse>('/api/v1/auth/refresh', {
+      const response = await apiClient.post<LoginResponse>('/api/v1/users/login/refresh', {
+        userId,
         refreshToken
       })
       const data = response.data

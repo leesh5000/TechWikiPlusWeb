@@ -25,7 +25,7 @@ export const SORT_OPTIONS = [
 export const VERIFICATION_FILTER_OPTIONS = [
   { value: '전체', label: '전체' },
   { value: '검증됨', label: '검증됨' },
-  { value: '검증 중', label: '검증 중' },
+  { value: '검수 중', label: '검수 중' },
   { value: '미검증', label: '미검증' }
 ]
 
@@ -58,4 +58,5 @@ export interface Document {
   readingTime: number
   verificationStartedAt?: string
   verificationEndAt?: string
+  reviewId?: string
 }

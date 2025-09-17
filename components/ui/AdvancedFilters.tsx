@@ -40,7 +40,7 @@ const verificationOptions = [
   },
   { 
     value: 'verifying', 
-    label: '검증 중', 
+    label: '검수 중', 
     icon: Timer, 
     color: 'text-blue-600 dark:text-blue-400' 
   },

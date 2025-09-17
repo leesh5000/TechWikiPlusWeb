@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Dropdown from '@/components/ui/Dropdown'
+import { reviewService } from '@/lib/api/review.service'
+import { mapUICommentTypeToAPI, ReviewCommentType } from '@/lib/types/review.types'
 import { 
   ArrowLeft, 
   Clock, 
@@ -13,7 +15,8 @@ import {
   Plus,
   Shield,
   X,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react'
 
 // 문서 검증 상태 타입
@@ -25,7 +28,7 @@ interface ReviewComment {
   lineStart: number  // 시작 라인
   lineEnd: number    // 끝 라인 (멀티라인 지원)
   content: string
-  type: 'accurate' | 'inaccurate' | 'improvement' | 'question'
+  type: string  // 동적으로 가져온 타입 ID
   author: string
   createdAt: string
   suggestedChange?: string  // 수정 제안 내용 (선택적)
@@ -49,12 +52,21 @@ interface Document {
   verificationDeadline?: string // 검수 마감 시간
 }
 
-const commentTypes = {
-  accurate: { label: '정확함', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
-  inaccurate: { label: '부정확함', color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20' },
-  improvement: { label: '개선 필요', color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-  question: { label: '질문', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' }
-}
+// 기본 코멘트 타입 (서버에서 가져오기 전 사용)
+const defaultCommentTypes: ReviewCommentType[] = [
+  { 
+    id: 'INACCURACY', 
+    name: '부정확한 내용', 
+    color: 'text-red-600', 
+    bgColor: 'bg-red-50 dark:bg-red-900/20' 
+  },
+  { 
+    id: 'NEEDS_IMPROVEMENT', 
+    name: '개선이 필요한 내용', 
+    color: 'text-yellow-600', 
+    bgColor: 'bg-yellow-50 dark:bg-yellow-900/20' 
+  }
+]
 
 interface ReviewPageContentProps {
   doc: Document
@@ -68,10 +80,13 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
   const [comments, setComments] = useState<ReviewComment[]>(initialComments)
   const [activeLineComment, setActiveLineComment] = useState<number | null>(null)
   const [newComment, setNewComment] = useState('')
-  const [commentType, setCommentType] = useState<ReviewComment['type']>('improvement')
+  const [commentType, setCommentType] = useState<string>('NEEDS_IMPROVEMENT')
   const [suggestedChange, setSuggestedChange] = useState('')
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [commentTypes, setCommentTypes] = useState<ReviewCommentType[]>(defaultCommentTypes)
   
   // 드래그 선택 상태
   const [selectionStart, setSelectionStart] = useState<number | null>(null)
@@ -83,6 +98,25 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
 
   // 문서를 라인별로 분할
   const lines = doc.content.split('\n')
+  
+  // 코멘트 타입 가져오기
+  useEffect(() => {
+    const fetchCommentTypes = async () => {
+      try {
+        const types = await reviewService.getReviewCommentTypes()
+        if (types.length > 0) {
+          setCommentTypes(types)
+          // 첫 번째 타입을 기본값으로 설정
+          setCommentType(types[0].id)
+        }
+      } catch (error) {
+        console.error('Failed to fetch comment types:', error)
+        // 에러 시 기본 타입 사용
+      }
+    }
+    
+    fetchCommentTypes()
+  }, [])
 
   // ESC 키로 선택 취소
   useEffect(() => {
@@ -104,7 +138,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
 
   // 의견 창이 열릴 때 제안 내용에 원본 내용 자동 입력
   useEffect(() => {
-    if (activeLineComment !== null && (commentType === 'inaccurate' || commentType === 'improvement')) {
+    if (activeLineComment !== null && (commentType === 'INACCURACY' || commentType === 'NEEDS_IMPROVEMENT')) {
       const selectedContent = getSelectedContent()
       if (selectedContent) {
         setSuggestedChange(selectedContent)
@@ -122,6 +156,11 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
   }, [activeLineComment, commentType])
 
 
+  // 코멘트 타입 가져오기
+  const getCommentType = (typeId: string): ReviewCommentType => {
+    return commentTypes.find(t => t.id === typeId) || commentTypes[0]
+  }
+  
   const handleAddComment = () => {
     if (selectionStart === null) return
 
@@ -132,7 +171,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
       errors.comment = '변경 이유를 입력해주세요.'
     }
     
-    if ((commentType === 'inaccurate' || commentType === 'improvement') && !suggestedChange.trim()) {
+    if ((commentType === 'INACCURACY' || commentType === 'NEEDS_IMPROVEMENT') && !suggestedChange.trim()) {
       errors.suggestedChange = '제안 내용을 입력해주세요.'
     }
     
@@ -159,7 +198,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
       type: commentType,
       author: '검수자',
       createdAt: new Date().toISOString(),
-      ...(suggestedChange.trim() && (commentType === 'inaccurate' || commentType === 'improvement') 
+      ...(suggestedChange.trim() && (commentType === 'INACCURACY' || commentType === 'NEEDS_IMPROVEMENT') 
         ? { suggestedChange: suggestedChange.trim() } 
         : {})
     }
@@ -241,25 +280,68 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
     return lines.slice(start, end + 1).join('\n')
   }
 
-  // 검수 완료하기 핸들러
-  const handleSubmitReview = () => {
-    // 수정 제안이 있는 comments 확인
-    const suggestedChanges = comments.filter(c => c.suggestedChange)
-    
-    if (suggestedChanges.length === 0) {
-      alert('수정 제안이 없습니다. 검수 의견을 작성해주세요.')
+  // 검수 완료하기 핸들러 (개정안 제출)
+  const handleSubmitReview = async () => {
+    // 최소 1개 이상의 코멘트 필요
+    if (comments.length === 0) {
+      setSubmitError('최소 1개 이상의 검수 의견을 작성해주세요.')
       return
     }
     
-    // 문서 업데이트 로직
-    const updatedContent = applyChangesToDocument(doc.content, suggestedChanges)
+    setIsSubmitting(true)
+    setSubmitError(null)
     
-    // 72시간 후 마감시간 설정
-    const verificationDeadline = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
-    
-    // TODO: 실제 환경에서는 API 호출로 다음 데이터 전송
-    // - documentId: doc.id
-    // - reviewComments: comments
+    try {
+      // 검수 시작 응답에서 reviewId 가져오기 (이미 문서가 검수 중이라면 해당 reviewId 사용)
+      // TODO: 실제로는 문서 상태에서 reviewId를 가져와야 함
+      const reviewId = doc.reviewId || doc.id.toString() // 임시로 doc.id 사용
+      
+      // 개정안 제목과 본문 생성
+      const revisionTitle = doc.title // 원본 제목 사용 또는 수정된 제목
+      
+      // 수정된 내용을 본문으로 구성
+      const modifiedLines = [...lines]
+      comments.forEach(comment => {
+        if (comment.suggestedChange) {
+          // 라인 인덱스 계산 (1-based to 0-based)
+          const startIdx = comment.lineStart - 1
+          const endIdx = comment.lineEnd - 1
+          
+          // 수정 내용을 해당 라인에 반영
+          const suggestedLines = comment.suggestedChange.split('\n')
+          modifiedLines.splice(startIdx, endIdx - startIdx + 1, ...suggestedLines)
+        }
+      })
+      const revisionBody = modifiedLines.join('\n')
+      
+      // 코멘트를 API 형식으로 변환 (reviewComments)
+      const reviewComments = comments.map(comment => ({
+        lineNumber: comment.lineStart, // API는 lineNumber를 요구
+        comment: comment.content,
+        type: comment.type, // 이미 'INACCURACY' 또는 'NEEDS_IMPROVEMENT' 형식
+        suggestedChange: comment.suggestedChange
+      }))
+      
+      // API 호출
+      await reviewService.submitRevision(reviewId, {
+        title: revisionTitle,
+        body: revisionBody,
+        reviewComments
+      })
+      
+      // 성공 시 처리
+      alert('개정안이 성공적으로 제출되었습니다.')
+      
+      // 문서 페이지로 이동
+      router.push(`/docs/${doc.id}`)
+    } catch (error) {
+      console.error('Failed to submit revision:', error)
+      setSubmitError(
+        error instanceof Error ? error.message : '개정안 제출에 실패했습니다. 잠시 후 다시 시도해주세요.'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
     // - updatedContent: updatedContent
     // - status: 'verifying'
     // - verificationDeadline: verificationDeadline
@@ -365,10 +447,20 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                 <div className="flex gap-2">
                   <button 
                     onClick={handleSubmitReview}
-                    className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
+                    disabled={isSubmitting || comments.length === 0}
+                    className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Check className="h-4 w-4" />
-                    검수 완료하기
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        제출 중...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        검수 완료하기
+                      </>
+                    )}
                   </button>
                 </div>
               )}
@@ -381,6 +473,17 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
             </div>
           </div>
         </section>
+
+        {/* Error Message */}
+        {submitError && (
+          <section className="py-4">
+            <div className="container">
+              <div className="rounded-md border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30 p-4">
+                <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Review Content */}
         <section className="py-8">
@@ -501,16 +604,23 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                             
                             {/* 수정 제안이 있는 경우 초록색 라인으로 표시 - 마지막 라인 아래에 표시 */}
                             {hasSuggestion && suggestionComment && isLastLineOfComment && (
-                              <div className="relative">
-                                <div 
-                                  className="flex bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors group min-h-[2.5rem] relative"
-                                  onMouseEnter={() => handleShowTooltip(suggestionComment.id)}
-                                  onMouseLeave={handleHideTooltip}
-                                >
-                                  <div className="w-14 shrink-0 select-none border-r text-xs font-medium flex items-center justify-center bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
-                                    +
+                              <div className="relative ml-14 -mt-1">
+                                <div className="bg-green-50 dark:bg-green-950/20 rounded-md border border-green-300 dark:border-green-800 p-3 mb-2">
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400">
+                                      수정 제안
+                                    </span>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getCommentType(suggestionComment.type).bgColor || ''} ${getCommentType(suggestionComment.type).color || ''}`}>
+                                      {getCommentType(suggestionComment.type).name}
+                                    </span>
                                   </div>
-                                  <div className="flex-1 px-4 py-2 whitespace-pre-wrap text-green-700 dark:text-green-300 font-mono text-sm leading-6">
+                                  
+                                  <div 
+                                    className="flex hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors group min-h-[2.5rem] relative rounded"
+                                    onMouseEnter={() => handleShowTooltip(suggestionComment.id)}
+                                    onMouseLeave={handleHideTooltip}
+                                  >
+                                  <div className="flex-1 px-2 py-1 whitespace-pre-wrap text-green-700 dark:text-green-300 font-mono text-sm leading-6">
                                     {suggestionComment.suggestedChange}
                                   </div>
                                   {!readOnly && (
@@ -525,6 +635,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                                       <X className="h-4 w-4" />
                                     </button>
                                   )}
+                                  </div>
                                 </div>
                                 
                                 {/* Hover Tooltip */}
@@ -537,12 +648,12 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                                     <div className="bg-popover text-popover-foreground rounded-lg shadow-lg border p-3 min-w-[250px] max-w-[400px]">
                                       <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${commentTypes[suggestionComment.type].bg} ${commentTypes[suggestionComment.type].color}`}>
+                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${getCommentType(suggestionComment.type).bgColor || ''} ${getCommentType(suggestionComment.type).color || ''}`}>
                                             {suggestionComment.author.charAt(0)}
                                           </div>
                                           <span className="text-sm font-medium">{suggestionComment.author}</span>
-                                          <span className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${commentTypes[suggestionComment.type].bg} ${commentTypes[suggestionComment.type].color}`}>
-                                            {commentTypes[suggestionComment.type].label}
+                                          <span className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getCommentType(suggestionComment.type).bgColor || ''} ${getCommentType(suggestionComment.type).color || ''}`}>
+                                            {getCommentType(suggestionComment.type).name}
                                           </span>
                                         </div>
                                         <div className="text-sm">
@@ -588,15 +699,19 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                                       <div className="flex items-center gap-2">
                                         <Dropdown
                                           value={commentType}
-                                          onChange={(value) => setCommentType(value as ReviewComment['type'])}
-                                          options={Object.entries(commentTypes).map(([key, type]) => ({
-                                            value: key,
-                                            label: type.label
+                                          onChange={(value) => setCommentType(value)}
+                                          options={commentTypes.map((type) => ({
+                                            value: type.id,
+                                            label: type.name
                                           }))}
+                                          className="flex-1"
                                         />
-                                        <div className={`px-2 py-1 rounded text-xs font-semibold ${commentTypes[commentType].bg} ${commentTypes[commentType].color}`}>
-                                          {commentTypes[commentType].label}
-                                        </div>
+                                        {/* 선택된 유형 색상 표시 */}
+                                        {commentType && (
+                                          <div className={`h-9 px-3 flex items-center rounded-md text-sm font-medium ${getCommentType(commentType).bgColor} ${getCommentType(commentType).color}`}>
+                                            {getCommentType(commentType).name}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     
@@ -638,7 +753,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                                     </div>
                                     
                                     {/* 수정 제안 입력 - 부정확함 또는 개선 필요일 때만 표시 */}
-                                    {(commentType === 'inaccurate' || commentType === 'improvement') && (
+                                    {(commentType === 'INACCURACY' || commentType === 'NEEDS_IMPROVEMENT') && (
                                       <div className="space-y-3">
                                         <div>
                                           <label className="text-sm font-semibold text-foreground mb-2 block">수정 제안</label>
@@ -743,11 +858,11 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
                       <p className="text-2xl font-bold text-primary">{comments.filter(c => c.suggestedChange).length}</p>
                     </div>
                     
-                    {Object.entries(commentTypes).map(([key, type]) => {
-                      const count = comments.filter(c => c.type === key).length
+                    {commentTypes.map((type) => {
+                      const count = comments.filter(c => c.type === type.id).length
                       return (
-                        <div key={key} className="flex justify-between items-center">
-                          <span className={`text-sm ${type.color}`}>{type.label}</span>
+                        <div key={type.id} className="flex justify-between items-center">
+                          <span className={`text-sm ${type.color || 'text-muted-foreground'}`}>{type.name}</span>
                           <span className="text-sm font-medium">{count}</span>
                         </div>
                       )

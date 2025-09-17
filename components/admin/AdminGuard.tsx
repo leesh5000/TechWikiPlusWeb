@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Shield } from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
+import {useEffect, useState} from 'react'
+import {useRouter} from 'next/navigation'
+import {Shield} from 'lucide-react'
+import {useAuth} from '@/lib/auth-context'
 
 interface AdminGuardProps {
   children: React.ReactNode

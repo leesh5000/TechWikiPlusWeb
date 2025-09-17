@@ -1,6 +1,6 @@
 import AdminLayout from '@/components/admin/AdminLayout'
 import AuthGuard from '@/components/AuthGuard'
-import { Metadata } from 'next'
+import {Metadata} from 'next'
 
 export const metadata: Metadata = {
   title: 'TechWiki+ 관리자',

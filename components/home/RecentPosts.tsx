@@ -106,7 +106,7 @@ export default function RecentPosts() {
                 ) : (
                   <span className="flex items-center text-xs text-yellow-600 dark:text-yellow-400">
                     <AlertCircle className="mr-1 h-3 w-3" />
-                    검증 중
+                    검수 중
                   </span>
                 )}
               </div>
