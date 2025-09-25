@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Dropdown from '@/components/ui/Dropdown'
+import { ToastContainer } from '@/components/ui/Toast'
+import { useToast } from '@/hooks/useToast'
 import { reviewService } from '@/lib/api/review.service'
 import { mapUICommentTypeToAPI, ReviewCommentType } from '@/lib/types/review.types'
 import { 
@@ -76,6 +78,7 @@ interface ReviewPageContentProps {
 
 export default function ReviewPageContent({ doc, readOnly = false, initialComments = [] }: ReviewPageContentProps) {
   const router = useRouter()
+  const { toasts, showToast, removeToast } = useToast()
   
   const [comments, setComments] = useState<ReviewComment[]>(initialComments)
   const [activeLineComment, setActiveLineComment] = useState<number | null>(null)
@@ -330,35 +333,20 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
       })
       
       // 성공 시 처리
-      alert('개정안이 성공적으로 제출되었습니다.')
+      showToast('개정안이 성공적으로 제출되었습니다.', 'success')
       
-      // 문서 페이지로 이동
-      router.push(`/docs/${doc.id}`)
+      // 잠시 후 문서 페이지로 이동
+      setTimeout(() => {
+        router.push(`/docs/${doc.id}`)
+      }, 1500)
     } catch (error) {
       console.error('Failed to submit revision:', error)
-      setSubmitError(
-        error instanceof Error ? error.message : '개정안 제출에 실패했습니다. 잠시 후 다시 시도해주세요.'
-      )
+      const errorMessage = error instanceof Error ? error.message : '개정안 제출에 실패했습니다. 잠시 후 다시 시도해주세요.'
+      showToast(errorMessage, 'error')
+      setSubmitError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
-    // - updatedContent: updatedContent
-    // - status: 'verifying'
-    // - verificationDeadline: verificationDeadline
-    
-    console.log('검수 제출 완료:', {
-      documentId: doc.id,
-      suggestionsCount: suggestedChanges.length,
-      commentsCount: comments.length,
-      verificationDeadline,
-      reviewer: '검수자' // 실제 사용자 정보로 대체
-    })
-    
-    // 성공 메시지
-    alert(`검수가 완료되었습니다.\n${suggestedChanges.length}개의 수정 사항이 제출되었습니다.\n\n문서가 검수 중 상태로 변경되었습니다.\n검수 기간: 72시간`)
-    
-    // 검수 목록 페이지로 이동
-    router.push(`/docs/${doc.id}/reviews`)
   }
   
   // Tooltip 표시 핸들러
@@ -883,6 +871,7 @@ export default function ReviewPageContent({ doc, readOnly = false, initialCommen
         </section>
       </main>
       <Footer />
+      <ToastContainer messages={toasts} onClose={removeToast} />
     </div>
   )
 }

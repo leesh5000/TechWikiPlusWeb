@@ -8,7 +8,7 @@ import Footer from '@/components/layout/Footer'
 import CodeBlock from '@/components/markdown/CodeBlock'
 import DocumentActions from '@/components/docs/DocumentActions'
 import { postsService } from '@/lib/api/posts.service'
-import { Document } from '@/lib/types/post.types'
+import { Document, VerificationStatus } from '@/lib/types/post.types'
 import { 
   ArrowLeft, 
   Clock, 
@@ -297,7 +297,20 @@ export default async function DocPage({ params }: DocPageProps) {
     
     // Try to use mock data as fallback
     const parsedId = parseInt(id)
-    const mockDoc = mockDocs.find(d => d.id === parsedId)
+    let mockDoc = mockDocs.find(d => d.id === parsedId)
+    
+    // If no exact match found and ID is large (like from API), create a fallback document
+    if (!mockDoc && id.length > 10) {
+      mockDoc = {
+        ...mockDocs[0],  // Use first mock as template
+        id: 1, // Use a valid number ID for the mock
+        title: mockDocs[0].title,
+        content: mockDocs[0].content,
+        verificationStatus: 'verifying' as VerificationStatus,
+        verificationStartedAt: new Date().toISOString(),
+        verificationEndAt: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+      }
+    }
     
     if (mockDoc) {
       doc = {
