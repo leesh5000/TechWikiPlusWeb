@@ -1,25 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import {useEffect, useRef, useState} from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import {useRouter} from 'next/navigation'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Dropdown from '@/components/ui/Dropdown'
-import { ToastContainer } from '@/components/ui/Toast'
-import { useToast } from '@/hooks/useToast'
-import { reviewService } from '@/lib/api/review.service'
-import { mapUICommentTypeToAPI, ReviewCommentType } from '@/lib/types/review.types'
-import { 
-  ArrowLeft, 
-  Clock, 
-  MessageSquare,
-  Plus,
-  Shield,
-  X,
-  Check,
-  Loader2
-} from 'lucide-react'
+import {ToastContainer} from '@/components/ui/Toast'
+import {useToast} from '@/hooks/useToast'
+import {reviewService} from '@/lib/api/review.service'
+import {ReviewCommentType} from '@/lib/types/review.types'
+import {ArrowLeft, Check, Clock, Loader2, MessageSquare, Plus, Shield, X} from 'lucide-react'
 
 // 문서 검증 상태 타입
 type VerificationStatus = 'unverified' | 'verifying' | 'verified'
@@ -52,6 +43,7 @@ interface Document {
   downvotes: number
   readingTime: number
   verificationDeadline?: string // 검수 마감 시간
+  reviewId?: string // 검수 ID (검수 중인 문서의 경우)
 }
 
 // 기본 코멘트 타입 (서버에서 가져오기 전 사용)

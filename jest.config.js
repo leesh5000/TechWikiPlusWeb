@@ -13,9 +13,7 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
-  },
+  // Remove babel-jest transform to avoid conflicts with Next.js
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
     'components/**/*.{js,jsx,ts,tsx}',
@@ -23,6 +21,10 @@ const customJestConfig = {
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
+  // Add maxWorkers to prevent worker issues
+  maxWorkers: '50%',
+  // Disable watch mode by default
+  watchman: false,
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

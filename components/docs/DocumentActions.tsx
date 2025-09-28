@@ -4,14 +4,15 @@ import { useState, memo } from 'react'
 import Link from 'next/link'
 import { useCountdown } from '@/lib/hooks/useCountdown'
 import { reviewService } from '@/lib/api/review.service'
-import { 
+import {
   ThumbsUp,
   ThumbsDown,
   Share2,
   Shield,
   Hourglass,
   Loader2,
-  Edit
+  Edit,
+  History
 } from 'lucide-react'
 
 type VerificationStatus = 'unverified' | 'verifying' | 'verified'
@@ -145,6 +146,13 @@ const DocumentActions = memo(function DocumentActions({ initialDoc }: DocumentAc
           <Share2 className="h-4 w-4" />
           공유
         </button>
+        <Link
+          href={`/docs/${doc.id}/reviews`}
+          className="flex items-center gap-1 rounded-md border border-input dark:border-input/70 px-3 py-2 text-sm hover:bg-accent dark:hover:bg-accent transition-colors"
+        >
+          <History className="h-4 w-4" />
+          리뷰 내역
+        </Link>
       </div>
       
       {/* 검수 중일 때 카운트다운 표시 */}

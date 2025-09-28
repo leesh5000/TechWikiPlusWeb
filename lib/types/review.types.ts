@@ -79,6 +79,57 @@ export const ReviewErrorCodes = {
 
 export type ReviewErrorCode = typeof ReviewErrorCodes[keyof typeof ReviewErrorCodes]
 
+// Review History Types
+export enum ReviewStatus {
+  IN_REVIEW = 'IN_REVIEW',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
+
+export interface ReviewHistoryItem {
+  reviewId: number
+  status: ReviewStatus | string
+  startedAt: string
+  deadline: string
+  completedAt?: string | null
+  winningRevisionId?: number | null
+}
+
+export type ReviewHistoryResponse = ReviewHistoryItem[]
+
+// Document revision types
+export interface DocumentRevision {
+  revisionId: number
+  reviewId: number
+  documentId: string
+  userId: string
+  username: string
+  createdAt: string
+  updatedAt: string
+  title: string
+  description: string
+  content: string
+  changes: {
+    type: 'added' | 'removed' | 'modified'
+    lineNumber: number
+    content: string
+    original?: string
+  }[]
+  votes: {
+    upvotes: number
+    downvotes: number
+    userVote?: 'up' | 'down' | null
+  }
+  status: 'pending' | 'approved' | 'rejected' | 'winner'
+  comments: {
+    commentId: number
+    userId: string
+    username: string
+    content: string
+    createdAt: string
+  }[]
+}
+
 // UI 타입과 API 타입 간 변환 헬퍼
 export const mapUICommentTypeToAPI = (uiType: string): string => {
   // API expects the raw type values like 'INACCURACY', 'NEEDS_IMPROVEMENT'

@@ -47,7 +47,8 @@
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(cmd //c:*)"
+      "Bash(cmd //c:*)",
+      "mcp__playwright__playwright_navigate"
     ],
     "deny": []
   }
