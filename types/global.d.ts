@@ -4,10 +4,10 @@
 /// <reference types="react-dom" />
 
 declare module 'next/link' {
-  import { LinkProps } from 'next/dist/client/link';
-  import { AnchorHTMLAttributes, DetailedHTMLProps } from 'react';
+    import {LinkProps} from 'next/dist/client/link';
+    import {AnchorHTMLAttributes, DetailedHTMLProps} from 'react';
 
-  export type { LinkProps };
+    export type { LinkProps };
   
   const Link: React.FC<LinkProps & {
     children?: React.ReactNode;

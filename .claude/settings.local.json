@@ -48,7 +48,9 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(cmd //c:*)",
-      "mcp__playwright__playwright_navigate"
+      "mcp__playwright__playwright_navigate",
+      "Bash(pnpm:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

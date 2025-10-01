@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Filter, Plus, Edit, Trash2, Eye, CheckCircle, AlertCircle, Timer } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import DataTable from '@/components/admin/DataTable'
-import { mockDocs } from '@/lib/mock-data'
 import { CATEGORY_COLORS, CATEGORIES } from '@/lib/constants'
 import Dropdown from '@/components/ui/Dropdown'
+import { postsService } from '@/lib/api/posts.service'
+import { Document, VerificationStatus } from '@/lib/types/post.types'
+import { useToast } from '@/lib/toast-context'
 
 const statusOptions = [
   { value: 'all', label: '전체 상태' },
@@ -15,31 +18,68 @@ const statusOptions = [
 ]
 
 export default function AdminDocumentsPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('전체')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedDoc, setSelectedDoc] = useState<number | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const pageSize = 10
+  const { showError } = useToast()
 
-  // 필터링
-  const filteredDocs = mockDocs.filter(doc => {
+  // Fetch documents from API
+  useEffect(() => {
+    fetchDocuments()
+  }, [currentPage])
+
+  const fetchDocuments = async () => {
+    setIsLoading(true)
+    try {
+      const response = await postsService.getDocumentsByPage(currentPage, pageSize)
+      setDocuments(response.documents)
+      setTotalPages(response.totalPages)
+      setTotalElements(response.totalElements)
+    } catch (error) {
+      console.error('Failed to fetch documents:', error)
+      showError('문서 로드 실패', error instanceof Error ? error.message : '문서를 불러오는데 실패했습니다.')
+      setDocuments([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 필터링 (클라이언트 사이드)
+  const filteredDocs = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          doc.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === '전체' || doc.category === categoryFilter
     const matchesStatus = statusFilter === 'all' || doc.verificationStatus === statusFilter
-    
+
     return matchesSearch && matchesCategory && matchesStatus
   })
+
+  // 통계 계산
+  const stats = {
+    total: totalElements,
+    verified: documents.filter(d => d.verificationStatus === 'verified').length,
+    verifying: documents.filter(d => d.verificationStatus === 'verifying').length,
+    unverified: documents.filter(d => d.verificationStatus === 'unverified').length
+  }
 
   const columns = [
     {
       key: 'id',
       title: 'ID',
-      className: 'w-16'
+      render: (value: string | number) => String(value).substring(0, 8),
+      className: 'w-24'
     },
     {
       key: 'title',
       title: '제목',
-      render: (value: string, item: any) => (
+      render: (value: string, item: Document) => (
         <div>
           <p className="font-medium">{value}</p>
           <p className="text-xs text-muted-foreground">{item.excerpt.substring(0, 50)}...</p>
@@ -47,21 +87,30 @@ export default function AdminDocumentsPage() {
       )
     },
     {
-      key: 'category',
-      title: '카테고리',
-      render: (value: string) => (
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-          CATEGORY_COLORS[value] || "bg-gray-100 text-gray-800"
-        }`}>
-          {value}
-        </span>
+      key: 'tags',
+      title: '태그',
+      render: (_: any, item: Document) => (
+        <div className="flex flex-wrap gap-1">
+          {item.tags && item.tags.length > 0 ? (
+            item.tags.map((tag) => (
+              <span
+                key={tag.name}
+                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary"
+              >
+                {tag.name}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground">-</span>
+          )}
+        </div>
       ),
-      className: 'w-32'
+      className: 'w-48'
     },
     {
       key: 'verificationStatus',
       title: '상태',
-      render: (value: string) => (
+      render: (value: VerificationStatus) => (
         <span className={`inline-flex items-center gap-1 text-sm ${
           value === 'verified' ? 'text-green-600 dark:text-green-400' :
           value === 'verifying' ? 'text-blue-600 dark:text-blue-400' :
@@ -91,14 +140,15 @@ export default function AdminDocumentsPage() {
     {
       key: 'actions',
       title: '작업',
-      render: (_: any, item: any) => (
+      render: (_: any, item: Document) => (
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation()
               // 문서 보기
+              window.open(`/docs/${item.id}`, '_blank')
             }}
-            className="p-1 rounded hover:bg-accent"
+            className="p-2 rounded hover:bg-accent flex items-center justify-center"
             title="보기"
           >
             <Eye className="h-4 w-4" />
@@ -106,9 +156,9 @@ export default function AdminDocumentsPage() {
           <button
             onClick={(e) => {
               e.stopPropagation()
-              // 문서 편집
+              router.push(`/admin/posts/${item.id}/edit`)
             }}
-            className="p-1 rounded hover:bg-accent"
+            className="p-2 rounded hover:bg-accent flex items-center justify-center"
             title="편집"
           >
             <Edit className="h-4 w-4" />
@@ -118,7 +168,7 @@ export default function AdminDocumentsPage() {
               e.stopPropagation()
               // 문서 삭제
             }}
-            className="p-1 rounded hover:bg-accent text-destructive"
+            className="p-2 rounded hover:bg-accent text-destructive flex items-center justify-center"
             title="삭제"
           >
             <Trash2 className="h-4 w-4" />
@@ -172,35 +222,67 @@ export default function AdminDocumentsPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">전체 문서</p>
-          <p className="text-2xl font-bold">{mockDocs.length}</p>
+          <p className="text-2xl font-bold">{stats.total}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">검증됨</p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {mockDocs.filter(d => d.verificationStatus === 'verified').length}
+            {stats.verified}
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">검수 중</p>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {mockDocs.filter(d => d.verificationStatus === 'verifying').length}
+            {stats.verifying}
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">미검증</p>
           <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-            {mockDocs.filter(d => d.verificationStatus === 'unverified').length}
+            {stats.unverified}
           </p>
         </div>
       </div>
 
-      {/* Data Table */}
-      <DataTable
-        data={filteredDocs}
-        columns={columns}
-        pageSize={10}
-        onRowClick={(doc) => setSelectedDoc(doc.id)}
-      />
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <>
+          {/* Data Table */}
+          <DataTable
+            data={filteredDocs}
+            columns={columns}
+            pageSize={pageSize}
+            onRowClick={(doc) => router.push(`/docs/${doc.id}`)}
+          />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-md border border-input hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              <span className="text-sm text-muted-foreground">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-md border border-input hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

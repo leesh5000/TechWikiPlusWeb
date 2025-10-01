@@ -1,8 +1,9 @@
 import { apiClient } from './client'
-import { 
-  Post, 
-  PostScrollResponse, 
-  Document, 
+import {
+  Post,
+  PostScrollResponse,
+  PostPageResponse,
+  Document,
   PostFilters,
   transformPostToDocument,
   PostApiError
@@ -11,7 +12,7 @@ import { AxiosError } from 'axios'
 
 class PostsService {
   /**
-   * Get paginated posts from the API
+   * Get paginated posts from the API (cursor-based)
    * @param filters - Filter options including pagination
    * @returns PostScrollResponse with posts and pagination info
    */
@@ -34,21 +35,91 @@ class PostsService {
       return response.data
     } catch (error) {
       const axiosError = error as AxiosError<PostApiError>
-      
+
       // Handle specific API errors
       if (axiosError.response?.data?.code === 'INVALID_PAGINATION_LIMIT') {
         throw new Error('Invalid pagination limit. Must be between 1 and 100')
       }
-      
+
       if (axiosError.response?.data?.code === 'INVALID_POST_ID_FORMAT') {
         throw new Error('Invalid cursor format')
       }
-      
+
       // Default error
       throw new Error(
-        axiosError.response?.data?.message || 
+        axiosError.response?.data?.message ||
         'Failed to fetch posts'
       )
+    }
+  }
+
+  /**
+   * Get posts with page-based pagination
+   * @param page - Page number (default: 1)
+   * @param size - Page size (default: 20, max: 100)
+   * @returns PostPageResponse with posts and pagination info
+   */
+  async getPostsByPage(page: number = 1, size: number = 20): Promise<PostPageResponse> {
+    try {
+      const params: Record<string, any> = {
+        page,
+        size
+      }
+
+      const response = await apiClient.get<PostPageResponse>('/api/v1/posts/pages', {
+        params
+      })
+
+      return response.data
+    } catch (error) {
+      const axiosError = error as AxiosError<PostApiError>
+
+      // Handle specific API errors
+      if (axiosError.response?.data?.code === 'INVALID_PAGINATION_LIMIT') {
+        throw new Error('페이지 크기는 1~100 사이여야 합니다')
+      }
+
+      if (axiosError.response?.data?.code === 'INVALID_PAGE_NUMBER') {
+        throw new Error('페이지 번호는 1 이상이어야 합니다')
+      }
+
+      // Default error
+      throw new Error(
+        axiosError.response?.data?.message ||
+        'Failed to fetch posts'
+      )
+    }
+  }
+
+  /**
+   * Get documents with page-based pagination
+   * @param page - Page number (default: 1)
+   * @param size - Page size (default: 20, max: 100)
+   * @returns Documents and pagination info
+   */
+  async getDocumentsByPage(page: number = 1, size: number = 20): Promise<{
+    documents: Document[]
+    totalElements: number
+    totalPages: number
+    currentPage: number
+    pageSize: number
+    hasNext: boolean
+    hasPrevious: boolean
+  }> {
+    const response = await this.getPostsByPage(page, size)
+
+    const documents = response.posts.map(post =>
+      transformPostToDocument(post)
+    )
+
+    return {
+      documents,
+      totalElements: response.totalElements,
+      totalPages: response.totalPages,
+      currentPage: response.currentPage,
+      pageSize: response.pageSize,
+      hasNext: response.hasNext,
+      hasPrevious: response.hasPrevious
     }
   }
 
@@ -199,24 +270,36 @@ class PostsService {
    * Update an existing post
    * @param postId - The post ID to update
    * @param postData - Updated post data
-   * @returns Updated post
+   * @returns void (204 No Content)
    */
   async updatePost(
     postId: string,
     postData: {
-      title?: string
-      body?: string
+      title: string
+      body: string
       tags?: string[]
     }
-  ): Promise<Post> {
+  ): Promise<void> {
     try {
-      const response = await apiClient.put<Post>(`/api/v1/posts/${postId}`, postData)
-      return response.data
+      await apiClient.put(`/api/v1/posts/${postId}`, postData)
     } catch (error) {
       const axiosError = error as AxiosError<PostApiError>
+
+      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
+        throw new Error(axiosError.response?.data?.message || '권한이 없습니다. 로그인 후 다시 시도해주세요.')
+      }
+
+      if (axiosError.response?.status === 404) {
+        throw new Error(axiosError.response?.data?.message || '게시글을 찾을 수 없습니다')
+      }
+
+      if (axiosError.response?.status === 400) {
+        throw new Error(axiosError.response?.data?.message || '잘못된 요청입니다')
+      }
+
       throw new Error(
-        axiosError.response?.data?.message || 
-        'Failed to update post'
+        axiosError.response?.data?.message ||
+        '게시글 수정에 실패했습니다'
       )
     }
   }

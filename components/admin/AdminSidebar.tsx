@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
   CheckSquare,
   Coins,
   Settings,
@@ -13,16 +13,23 @@ import {
   Menu,
   X,
   Bell,
-  Flag
+  Flag,
+  FileEdit
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 const menuItems = [
   {
     title: '대시보드',
     href: '/admin',
     icon: LayoutDashboard
+  },
+  {
+    title: '게시글 관리',
+    href: '/admin/posts/create',
+    icon: FileEdit
   },
   {
     title: '문서 관리',
@@ -59,6 +66,7 @@ const menuItems = [
 export default function AdminSidebar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user, logout } = useAuth()
 
   return (
     <>
@@ -118,11 +126,14 @@ export default function AdminSidebar() {
                 <Users className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 text-sm">
-                <p className="font-medium">관리자</p>
-                <p className="text-xs text-muted-foreground">admin@techwiki.com</p>
+                <p className="font-medium">{user?.nickname || '관리자'}</p>
+                <p className="text-xs text-muted-foreground">{user?.email || 'admin@techwiki.com'}</p>
               </div>
             </div>
-            <button className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <button
+              onClick={logout}
+              className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
               <LogOut className="h-4 w-4" />
               로그아웃
             </button>

@@ -29,11 +29,22 @@ export interface Post {
   downvotes?: number
 }
 
-// API Response for paginated posts
+// API Response for paginated posts (cursor-based)
 export interface PostScrollResponse {
   posts: Post[]
   hasNext: boolean
   nextCursor: string | null
+}
+
+// API Response for page-based pagination
+export interface PostPageResponse {
+  posts: Post[]
+  totalElements: number
+  totalPages: number
+  currentPage: number
+  pageSize: number
+  hasNext: boolean
+  hasPrevious: boolean
 }
 
 // Frontend Document type (transformed from Post)
@@ -41,6 +52,7 @@ export interface Document {
   id: string | number
   title: string
   category: string
+  tags: Tag[]
   createdAt: string
   updatedAt?: string
   viewCount: number
@@ -144,6 +156,7 @@ export function transformPostToDocument(post: Post): Document {
     id: post.id,
     title: post.title,
     category: extractCategoryFromPost(post),
+    tags: post.tags || [],
     createdAt: post.createdAt,
     updatedAt: post.updatedAt || post.modifiedAt,
     viewCount: post.viewCount || 0,
