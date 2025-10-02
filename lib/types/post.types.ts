@@ -51,7 +51,6 @@ export interface PostPageResponse {
 export interface Document {
   id: string | number
   title: string
-  category: string
   tags: Tag[]
   createdAt: string
   updatedAt?: string
@@ -100,30 +99,6 @@ export function mapPostStatusToVerificationStatus(status: PostStatus): Verificat
   }
 }
 
-// Helper function to extract category from post (from tags or default)
-export function extractCategoryFromPost(post: Post): string {
-  // If post has tags, use the first one as category
-  if (post.tags && post.tags.length > 0) {
-    // Capitalize first letter and format the tag name
-    const tagName = post.tags[0].name
-    return tagName.charAt(0).toUpperCase() + tagName.slice(1).toLowerCase()
-  }
-  
-  // Default category based on keywords in title
-  const title = post.title.toLowerCase()
-  
-  if (title.includes('react')) return 'React'
-  if (title.includes('typescript') || title.includes('ts')) return 'TypeScript'
-  if (title.includes('next')) return 'Next.js'
-  if (title.includes('vue')) return 'Vue'
-  if (title.includes('python')) return 'Python'
-  if (title.includes('docker') || title.includes('kubernetes') || title.includes('devops')) return 'DevOps'
-  if (title.includes('aws') || title.includes('cloud')) return 'AWS'
-  if (title.includes('database') || title.includes('mongodb') || title.includes('sql')) return 'Database'
-  if (title.includes('api') || title.includes('graphql') || title.includes('rest')) return 'API'
-  
-  return 'General'
-}
 
 // Calculate reading time from content
 export function calculateReadingTime(content: string): number {
@@ -135,11 +110,11 @@ export function calculateReadingTime(content: string): number {
 // Transform Post to Document for frontend
 export function transformPostToDocument(post: Post): Document {
   const verificationStatus = mapPostStatusToVerificationStatus(post.status)
-  
+
   // Calculate verification dates for IN_REVIEW status
   let verificationStartedAt: string | undefined
   let verificationEndAt: string | undefined
-  
+
   if (verificationStatus === 'verifying') {
     const dateToUse = post.updatedAt || post.modifiedAt || post.createdAt
     verificationStartedAt = dateToUse
@@ -147,15 +122,14 @@ export function transformPostToDocument(post: Post): Document {
     endDate.setHours(endDate.getHours() + 72) // 72 hours verification period
     verificationEndAt = endDate.toISOString()
   }
-  
+
   // Determine author and verifiedBy based on status
   const author = "AI Writer" // Default author
   const verifiedBy = verificationStatus === 'verified' ? "커뮤니티" : null
-  
+
   return {
     id: post.id,
     title: post.title,
-    category: extractCategoryFromPost(post),
     tags: post.tags || [],
     createdAt: post.createdAt,
     updatedAt: post.updatedAt || post.modifiedAt,

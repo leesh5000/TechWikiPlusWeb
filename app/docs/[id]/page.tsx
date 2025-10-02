@@ -31,14 +31,6 @@ const fallbackContent = `
 문서 작성자에게 내용 추가를 요청해주세요.
 `
 
-const categoryColors: Record<string, string> = {
-  React: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-  DevOps: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400",
-  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-  API: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-}
 
 interface DocPageProps {
   params: Promise<{
@@ -47,11 +39,17 @@ interface DocPageProps {
 }
 
 // Fetch related documents
-async function fetchRelatedDocuments(category: string, currentId: string | number): Promise<Document[]> {
+async function fetchRelatedDocuments(currentId: string | number, tags: { name: string; displayOrder: number }[]): Promise<Document[]> {
   try {
     const response = await postsService.getDocuments({ limit: 10 })
+    const tagNames = tags.map(t => t.name.toLowerCase())
+
     return response.documents
-      .filter(d => String(d.id) !== String(currentId) && d.category === category)
+      .filter(d => {
+        if (String(d.id) === String(currentId)) return false
+        // Find documents with at least one matching tag
+        return d.tags.some(t => tagNames.includes(t.name.toLowerCase()))
+      })
       .slice(0, 2)
   } catch (error) {
     console.error('Failed to fetch related documents:', error)
@@ -71,7 +69,7 @@ export default async function DocPage({ params }: DocPageProps) {
 
     // Fetch related documents
     if (doc) {
-      relatedDocs = await fetchRelatedDocuments(doc.category, doc.id)
+      relatedDocs = await fetchRelatedDocuments(doc.id, doc.tags)
     }
   } catch (error) {
     console.error('Failed to fetch document:', error)
@@ -107,15 +105,8 @@ export default async function DocPage({ params }: DocPageProps) {
         <section className="border-b dark:border-border/70 py-8">
           <div className="container">
             <div className="mx-auto max-w-4xl">
-              {/* Category & Verification Status */}
-              <div className="mb-4 flex items-center gap-3">
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
-                    categoryColors[doc.category] || "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {doc.category}
-                </span>
+              {/* Verification Status */}
+              <div className="mb-4">
                 {doc.verificationStatus === 'verified' ? (
                   <span className="flex items-center text-sm text-green-600 dark:text-green-400">
                     <CheckCircle className="mr-1 h-4 w-4" />
@@ -133,6 +124,22 @@ export default async function DocPage({ params }: DocPageProps) {
                   </span>
                 )}
               </div>
+
+              {/* Tags */}
+              {doc.tags && doc.tags.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {[...doc.tags]
+                    .sort((a, b) => a.displayOrder - b.displayOrder)
+                    .map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 px-3 py-1 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                      >
+                        #{tag.name}
+                      </span>
+                    ))}
+                </div>
+              )}
 
               {/* Title */}
               <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -293,13 +300,6 @@ export default async function DocPage({ params }: DocPageProps) {
                       href={`/docs/${relatedDoc.id}`}
                       className="group block rounded-lg border border-border dark:border-border/70 bg-background dark:bg-card p-4 hover:shadow-md dark:hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/30 transition-all">
                       <div className="mb-2 flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            categoryColors[relatedDoc.category] || "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {relatedDoc.category}
-                        </span>
                         {relatedDoc.verificationStatus === 'verified' && (
                           <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
                         )}
@@ -307,6 +307,21 @@ export default async function DocPage({ params }: DocPageProps) {
                       <h4 className="mb-1 font-medium group-hover:text-primary">
                         {relatedDoc.title}
                       </h4>
+                      {relatedDoc.tags && relatedDoc.tags.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-1">
+                          {[...relatedDoc.tags]
+                            .sort((a, b) => a.displayOrder - b.displayOrder)
+                            .slice(0, 3)
+                            .map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300"
+                              >
+                                #{tag.name}
+                              </span>
+                            ))}
+                        </div>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         {relatedDoc.excerpt}
                       </p>

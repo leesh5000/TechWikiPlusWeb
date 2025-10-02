@@ -23,7 +23,7 @@ const mockDocs: Document[] = [
   {
     id: '1',
     title: "React 19의 새로운 기능: Server Components 완벽 가이드",
-    category: "React",
+    tags: [{name: "React", displayOrder: 0}],
     createdAt: "2025-01-19",
     viewCount: 1234,
     verificationStatus: 'verified' as VerificationStatus,
@@ -34,7 +34,7 @@ const mockDocs: Document[] = [
   {
     id: '2',
     title: "TypeScript 5.0 마이그레이션 가이드",
-    category: "TypeScript",
+    tags: [{name: "TypeScript", displayOrder: 0}],
     createdAt: "2025-01-18",
     viewCount: 892,
     verificationStatus: 'verified' as VerificationStatus,
@@ -45,7 +45,7 @@ const mockDocs: Document[] = [
   {
     id: '3',
     title: "Kubernetes 보안 모범 사례 2025",
-    category: "DevOps",
+    tags: [{name: "DevOps", displayOrder: 0}, {name: "Kubernetes", displayOrder: 1}],
     createdAt: "2025-01-18",
     viewCount: 567,
     verificationStatus: 'verifying' as VerificationStatus,
@@ -58,7 +58,7 @@ const mockDocs: Document[] = [
   {
     id: '4',
     title: "Next.js 15 App Router 성능 최적화 팁",
-    category: "Next.js",
+    tags: [{name: "Next.js", displayOrder: 0}],
     createdAt: "2025-01-17",
     viewCount: 2103,
     verificationStatus: 'verified' as VerificationStatus,
@@ -69,7 +69,7 @@ const mockDocs: Document[] = [
   {
     id: '5',
     title: "Python 비동기 프로그래밍 심화 과정",
-    category: "Python",
+    tags: [{name: "Python", displayOrder: 0}],
     createdAt: "2025-01-17",
     viewCount: 1456,
     verificationStatus: 'unverified' as VerificationStatus,
@@ -80,7 +80,7 @@ const mockDocs: Document[] = [
   {
     id: '6',
     title: "GraphQL vs REST: 2025년 선택 가이드",
-    category: "API",
+    tags: [{name: "API", displayOrder: 0}],
     createdAt: "2025-01-16",
     viewCount: 789,
     verificationStatus: 'verified' as VerificationStatus,
@@ -91,7 +91,7 @@ const mockDocs: Document[] = [
   {
     id: '7',
     title: "Docker 멀티 스테이지 빌드 마스터하기",
-    category: "DevOps",
+    tags: [{name: "DevOps", displayOrder: 0}, {name: "Docker", displayOrder: 1}],
     createdAt: "2025-01-16",
     viewCount: 1023,
     verificationStatus: 'verified' as VerificationStatus,
@@ -102,7 +102,7 @@ const mockDocs: Document[] = [
   {
     id: '8',
     title: "Vue 3 Composition API 실전 가이드",
-    category: "Vue",
+    tags: [{name: "Vue", displayOrder: 0}],
     createdAt: "2025-01-15",
     viewCount: 634,
     verificationStatus: 'unverified' as VerificationStatus,
@@ -113,7 +113,7 @@ const mockDocs: Document[] = [
   {
     id: '9',
     title: "AWS Lambda 서버리스 아키텍처 설계",
-    category: "AWS",
+    tags: [{name: "AWS", displayOrder: 0}],
     createdAt: "2025-01-15",
     viewCount: 1567,
     verificationStatus: 'verified' as VerificationStatus,
@@ -124,7 +124,7 @@ const mockDocs: Document[] = [
   {
     id: '10',
     title: "MongoDB 인덱싱 전략과 성능 최적화",
-    category: "Database",
+    tags: [{name: "Database", displayOrder: 0}, {name: "MongoDB", displayOrder: 1}],
     createdAt: "2025-01-14",
     viewCount: 891,
     verificationStatus: 'unverified' as VerificationStatus,
@@ -135,7 +135,7 @@ const mockDocs: Document[] = [
   {
     id: '11',
     title: "React Native 앱 성능 최적화 완벽 가이드",
-    category: "React",
+    tags: [{name: "React", displayOrder: 0}, {name: "React Native", displayOrder: 1}],
     createdAt: "2025-01-19",
     viewCount: 234,
     verificationStatus: 'unverified' as VerificationStatus,
@@ -145,23 +145,9 @@ const mockDocs: Document[] = [
   }
 ]
 
-const categories = ["전체", "React", "TypeScript", "DevOps", "Next.js", "Python", "API", "Vue", "AWS", "Database"]
-
-const categoryColors: Record<string, string> = {
-  React: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  TypeScript: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-  DevOps: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-  "Next.js": "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400",
-  Python: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-  API: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-  Vue: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400",
-  AWS: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
-  Database: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400"
-}
 
 export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('전체')
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     verificationStatus: [],
@@ -231,34 +217,24 @@ export default function DocsPage() {
   const filteredDocs = useMemo(() => {
     let filtered = documents.filter(doc => {
       // 검색 쿼리 필터
-      const matchesSearch = searchQuery === '' || 
+      const matchesSearch = searchQuery === '' ||
                           doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (doc.excerpt && doc.excerpt.toLowerCase().includes(searchQuery.toLowerCase()))
-      
-      // 카테고리 필터 - selectedCategory와 filters.categories 중 하나만 적용
-      let matchesCategory = true
-      if (filters.categories.length > 0) {
-        // 고급 필터의 카테고리가 설정된 경우 이것만 사용
-        matchesCategory = filters.categories.includes(doc.category)
-      } else if (selectedCategory !== '전체') {
-        // 그렇지 않으면 quick filter의 선택된 카테고리 사용
-        matchesCategory = doc.category === selectedCategory
-      }
-      
+
       // 검증 상태 필터
-      const matchesVerification = 
-        filters.verificationStatus.length === 0 || 
+      const matchesVerification =
+        filters.verificationStatus.length === 0 ||
         filters.verificationStatus.includes(doc.verificationStatus)
-      
+
       // 조회수 필터
       const matchesViews = doc.viewCount >= filters.minViews
-      
+
       // 날짜 필터
       let matchesDate = true
       if (filters.dateRange !== 'all') {
         const docDate = new Date(doc.createdAt)
         const now = new Date()
-        
+
         switch (filters.dateRange) {
           case 'today':
             matchesDate = docDate.toDateString() === now.toDateString()
@@ -277,8 +253,8 @@ export default function DocsPage() {
             break
         }
       }
-      
-      return matchesSearch && matchesCategory && matchesVerification && matchesViews && matchesDate
+
+      return matchesSearch && matchesVerification && matchesViews && matchesDate
     })
 
     // 정렬
@@ -296,19 +272,11 @@ export default function DocsPage() {
     })
 
     return filtered
-  }, [documents, searchQuery, selectedCategory, filters])
-
-  // 검색 제안사항 핸들러
-  const handleSearchSuggestion = (suggestion: SearchSuggestion) => {
-    if (suggestion.type === 'category' && suggestion.category) {
-      setSelectedCategory(suggestion.category)
-    }
-  }
+  }, [documents, searchQuery, filters])
 
   // 필터 초기화
   const resetFilters = () => {
     setSearchQuery('')
-    setSelectedCategory('전체')
     setFilters({
       categories: [],
       verificationStatus: [],
@@ -338,31 +306,9 @@ export default function DocsPage() {
                 <SearchAutocomplete
                   value={searchQuery}
                   onChange={setSearchQuery}
-                  onSelect={handleSearchSuggestion}
                   placeholder="문서 제목이나 내용으로 검색..."
                 />
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Quick Category Filters */}
-        <section className="border-b py-6">
-          <div className="container">
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted dark:bg-muted/30 text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/40'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
             </div>
           </div>
         </section>
@@ -372,7 +318,6 @@ export default function DocsPage() {
           filters={filters}
           onChange={setFilters}
           onReset={resetFilters}
-          categories={categories.filter(cat => cat !== '전체')}
         />
 
         {/* Results */}
@@ -415,15 +360,8 @@ export default function DocsPage() {
                   key={doc.id}
                   className="group relative flex flex-col overflow-hidden rounded-lg border border-border dark:border-border/70 bg-card dark:bg-card shadow-sm dark:shadow-none transition-all hover:shadow-md dark:hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/30"
                 >
-                  {/* Category Badge */}
+                  {/* Verification Status */}
                   <div className="flex items-center justify-between border-b dark:border-border/70 p-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        categoryColors[doc.category] || "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {doc.category}
-                    </span>
                     {doc.verificationStatus === 'verified' ? (
                       <span className="flex items-center text-xs text-green-600 dark:text-green-400">
                         <CheckCircle className="mr-1 h-3 w-3" />
@@ -449,15 +387,32 @@ export default function DocsPage() {
                         href={`/docs/${doc.id}`}
                         className="hover:text-primary"
                       >
-                        <SearchHighlight 
-                          text={doc.title} 
+                        <SearchHighlight
+                          text={doc.title}
                           searchQuery={searchQuery}
                         />
                       </Link>
                     </h3>
+
+                    {/* Tags */}
+                    {doc.tags && doc.tags.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-1.5">
+                        {[...doc.tags]
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300"
+                            >
+                              #{tag.name}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+
                     <p className="mb-4 line-clamp-3 text-sm text-muted-foreground">
-                      <SearchHighlight 
-                        text={doc.excerpt} 
+                      <SearchHighlight
+                        text={doc.excerpt}
                         searchQuery={searchQuery}
                       />
                     </p>
