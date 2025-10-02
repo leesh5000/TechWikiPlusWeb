@@ -1,16 +1,15 @@
-import { apiClient } from './client'
+import {apiClient} from './client'
 import {
-  StartReviewResponse,
-  ReviewApiError,
-  ReviewErrorCodes,
-  ReviewCommentType,
-  ReviewCommentTypesResponse,
-  PostRevisionRequest,
-  PostRevisionResponse,
-  ReviewHistoryResponse,
-  DocumentRevision
+    DocumentRevision,
+    PostRevisionRequest,
+    PostRevisionResponse,
+    ReviewApiError,
+    ReviewCommentType,
+    ReviewErrorCodes,
+    ReviewHistoryResponse,
+    StartReviewResponse
 } from '@/lib/types/review.types'
-import { AxiosError } from 'axios'
+import {AxiosError} from 'axios'
 
 class ReviewService {
   /**
@@ -566,7 +565,7 @@ function useLocalStorage(key, initialValue) {
             'INACCURACY': { 
               name: item.description || '부정확한 내용', 
               color: 'text-red-600', 
-              bgColor: 'bg-red-50 dark:bg-red-900/20' 
+              bgColor: 'bg-red-50 dark:bg-red-900/20'
             },
             'NEEDS_IMPROVEMENT': { 
               name: item.description || '개선이 필요한 내용', 

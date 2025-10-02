@@ -21,21 +21,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = useCallback(async () => {
     setIsLoading(true)
     try {
-      // MOCK: Use mock user for development
-      const mockUser: User = {
-        id: '1',
-        email: 'admin@example.com',
-        nickname: 'Admin User',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        points: 5000,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-01T00:00:00.000Z'
-      }
-      setUser(mockUser)
-      setIsAuthenticated(true)
-      
-      /* Original auth check - uncomment when backend is ready
       // Check if we have a token
       if (authService.isAuthenticated()) {
         // Try to get current user info
@@ -46,7 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null)
         setIsAuthenticated(false)
       }
-      */
     } catch (error) {
       console.error('Auth check failed:', error)
       setUser(null)

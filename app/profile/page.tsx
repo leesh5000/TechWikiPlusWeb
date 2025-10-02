@@ -52,7 +52,7 @@ export default function ProfilePage() {
   if (!user) return null
 
   const stats = calculateStats(user)
-  const { level, progress } = calculateLevel(user.points)
+  const { level, progress } = calculateLevel(user.points || 0)
 
   const handleLogout = () => {
     logout()
@@ -60,7 +60,7 @@ export default function ProfilePage() {
   }
 
   const handleCashout = () => {
-    if (user.points >= 1000) {
+    if (user.points && user.points >= 1000) {
       alert('포인트 환급 신청이 접수되었습니다. 영업일 기준 3-5일 내에 처리됩니다.')
     }
   }
@@ -73,32 +73,28 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* 아바타 */}
             <div className="flex-shrink-0">
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.username} className="w-24 h-24 rounded-full" />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-primary">
-                    {user.username[0].toUpperCase()}
-                  </span>
-                </div>
-              )}
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-3xl font-bold text-primary">
+                  {user.nickname[0].toUpperCase()}
+                </span>
+              </div>
             </div>
 
             {/* 사용자 정보 */}
             <div className="flex-grow">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold">{user.username}</h1>
+                <h1 className="text-2xl font-bold">{user.nickname}</h1>
                 <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
-                  user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400' :
-                  user.role === 'contributor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                  user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400' :
+                  user.role === 'CONTRIBUTOR' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
                   'bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400'
                 }`}>
                   <Shield className="h-3 w-3" />
-                  {user.role === 'admin' ? '관리자' :
-                   user.role === 'contributor' ? '기여자' : '일반 사용자'}
+                  {user.role === 'ADMIN' ? '관리자' :
+                   user.role === 'CONTRIBUTOR' ? '기여자' : '일반 사용자'}
                 </span>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Mail className="h-4 w-4" />
@@ -106,7 +102,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  가입일: 2024-12-15
+                  가입일: {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : 'N/A'}
                 </div>
               </div>
 
@@ -148,16 +144,18 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">총 포인트</p>
-                <p className="text-2xl font-bold">{user.points.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{(user.points || 0).toLocaleString()}</p>
               </div>
               <Trophy className="h-8 w-8 text-yellow-600" />
             </div>
-            <Link
-              href="/points"
-              className="mt-3 w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              포인트 관리
-            </Link>
+            {user.points !== undefined && (
+              <Link
+                href="/points"
+                className="mt-3 w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                포인트 관리
+              </Link>
+            )}
           </div>
 
           <div className="bg-card rounded-lg shadow-sm border p-4">

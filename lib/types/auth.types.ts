@@ -54,3 +54,19 @@ export interface AuthContextType {
   verifyEmail: (email: string, code: string) => Promise<void>
   resendVerificationCode: (email: string) => Promise<void>
 }
+
+// API Response Types
+export interface UserProfileResponse {
+  userId: string
+  email: string
+  nickname: string
+  role: string
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UserRoleType {
+  value: string
+  description: string
+}

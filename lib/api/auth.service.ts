@@ -1,10 +1,11 @@
 import { apiClient } from './client'
-import { 
-  User, 
-  SignupRequest, 
-  LoginRequest, 
+import {
+  User,
+  SignupRequest,
+  LoginRequest,
   LoginResponse,
-  ApiError 
+  ApiError,
+  UserProfileResponse
 } from '@/lib/types/auth.types'
 import { AxiosError } from 'axios'
 
@@ -59,8 +60,19 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User> {
     try {
-      const response = await apiClient.get<User>('/api/v1/users/me')
-      return response.data
+      const response = await apiClient.get<UserProfileResponse>('/api/v1/users/me')
+      const profile = response.data
+
+      // Map UserProfileResponse to User
+      return {
+        id: profile.userId,
+        email: profile.email,
+        nickname: profile.nickname,
+        role: profile.role as User['role'],
+        status: profile.status as User['status'],
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt
+      }
     } catch (error) {
       throw this.handleAuthError(error)
     }
